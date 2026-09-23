@@ -1,0 +1,87 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Categorías</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()">+ Nueva categoría</button>
+      </c-card-header>
+      <c-card-body>
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 border">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Categoría padre</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (category of categories(); track category.id) {
+              <tr>
+                <td>{{ category.name }}</td>
+                <td>
+                  <c-badge [color]="category.type === 'INCOME' ? 'success' : 'danger'">
+                    {{ category.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+                  </c-badge>
+                </td>
+                <td>{{ parentName(category) }}</td>
+                <td class="text-end">
+                  <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(category)">Editar</button>
+                  <button cButton color="danger" size="sm" variant="outline" (click)="remove(category)">Eliminar</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center text-body-secondary py-4">
+                  @if (loading()) { Cargando... } @else { No tienes categorías todavía. }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="modalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>{{ editingId() ? 'Editar categoría' : 'Nueva categoría' }}</h5>
+    <button (click)="modalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="form" (ngSubmit)="save()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col xs="12">
+          <label cLabel for="name">Nombre</label>
+          <input cFormControl formControlName="name" id="name" placeholder="Ej. Alimentación" type="text" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="type">Tipo</label>
+          <select cSelect formControlName="type" id="type">
+            <option value="EXPENSE">Gasto</option>
+            <option value="INCOME">Ingreso</option>
+          </select>
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="parentId">Categoría padre (opcional)</label>
+          <select cSelect formControlName="parentId" id="parentId">
+            <option value="">Ninguna</option>
+            @for (parent of topLevelCategories(); track parent.id) {
+              @if (parent.id !== editingId()) {
+                <option [value]="parent.id">{{ parent.name }}</option>
+              }
+            }
+          </select>
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="modalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>

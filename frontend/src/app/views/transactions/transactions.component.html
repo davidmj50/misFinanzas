@@ -1,0 +1,207 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Filtros</strong>
+      </c-card-header>
+      <c-card-body>
+        <form cForm [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+          <c-row class="gy-3 align-items-end">
+            <c-col md="2">
+              <label cLabel for="fAccount">Cuenta</label>
+              <select cSelect formControlName="accountId" id="fAccount">
+                <option value="">Todas</option>
+                @for (account of accounts(); track account.id) {
+                  <option [value]="account.id">{{ account.name }}</option>
+                }
+              </select>
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="fCategory">Categoría</label>
+              <select cSelect formControlName="categoryId" id="fCategory">
+                <option value="">Todas</option>
+                @for (category of categories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="fType">Tipo</label>
+              <select cSelect formControlName="type" id="fType">
+                <option value="">Todos</option>
+                <option value="INCOME">Ingreso</option>
+                <option value="EXPENSE">Gasto</option>
+              </select>
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="fDateFrom">Desde</label>
+              <input cFormControl formControlName="dateFrom" id="fDateFrom" type="date" />
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="fDateTo">Hasta</label>
+              <input cFormControl formControlName="dateTo" id="fDateTo" type="date" />
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="fSearch">Buscar</label>
+              <input cFormControl formControlName="search" id="fSearch" placeholder="Comercio, nota..." type="text" />
+            </c-col>
+            <c-col xs="12" class="d-flex gap-2">
+              <button cButton color="primary" type="submit">Filtrar</button>
+              <button (click)="clearFilters()" cButton color="secondary" type="button" variant="outline">Limpiar</button>
+            </c-col>
+          </c-row>
+        </form>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Transacciones ({{ total() }})</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="accounts().length === 0">+ Nueva transacción</button>
+      </c-card-header>
+      <c-card-body>
+        @if (accounts().length === 0) {
+          <c-alert color="warning">Primero crea una cuenta para poder registrar transacciones.</c-alert>
+        }
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 border">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cuenta</th>
+              <th>Categoría</th>
+              <th>Comercio / Descripción</th>
+              <th>Tipo</th>
+              <th class="text-end">Monto</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tx of transactions(); track tx.id) {
+              <tr>
+                <td>{{ tx.date.slice(0, 10) }}</td>
+                <td>{{ tx.account?.name }}</td>
+                <td>{{ tx.category?.name || 'Sin categoría' }}</td>
+                <td>
+                  <div>{{ tx.merchant || tx.description || '—' }}</div>
+                  @if (tx.merchant && tx.description) {
+                    <div class="small text-body-secondary">{{ tx.description }}</div>
+                  }
+                </td>
+                <td>
+                  <c-badge [color]="tx.type === 'INCOME' ? 'success' : 'danger'">
+                    {{ tx.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+                  </c-badge>
+                </td>
+                <td class="text-end" [class.text-success]="tx.type === 'INCOME'" [class.text-danger]="tx.type === 'EXPENSE'">
+                  {{ tx.type === 'INCOME' ? '+' : '-' }}{{ tx.amount }} {{ tx.currency }}
+                </td>
+                <td class="text-end">
+                  <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(tx)">Editar</button>
+                  <button cButton color="danger" size="sm" variant="outline" (click)="remove(tx)">Eliminar</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center text-body-secondary py-4">
+                  @if (loading()) { Cargando... } @else { No hay transacciones con estos filtros. }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (totalPages() > 1) {
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-body-secondary small">Página {{ page() }} de {{ totalPages() }}</span>
+            <div class="d-flex gap-2">
+              <button cButton color="secondary" size="sm" variant="outline" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Anterior</button>
+              <button cButton color="secondary" size="sm" variant="outline" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">Siguiente</button>
+            </div>
+          </div>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="modalVisible" size="lg">
+  <c-modal-header>
+    <h5 cModalTitle>{{ editingId() ? 'Editar transacción' : 'Nueva transacción' }}</h5>
+    <button (click)="modalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="form" (ngSubmit)="save()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col md="6">
+          <label cLabel for="txType">Tipo</label>
+          <select cSelect formControlName="type" id="txType">
+            <option value="EXPENSE">Gasto</option>
+            <option value="INCOME">Ingreso</option>
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txAmount">Monto</label>
+          <input cFormControl formControlName="amount" id="txAmount" step="0.01" type="number" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txAccount">Cuenta</label>
+          <select cSelect formControlName="accountId" id="txAccount">
+            @for (account of accounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }}</option>
+            }
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txCategory">Categoría</label>
+          <select cSelect formControlName="categoryId" id="txCategory">
+            <option value="">Sin categoría</option>
+            @for (category of categoriesForType(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txDate">Fecha</label>
+          <input cFormControl formControlName="date" id="txDate" type="date" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txPaymentMethod">Método de pago (opcional)</label>
+          <input cFormControl formControlName="paymentMethod" id="txPaymentMethod" placeholder="Ej. Débito, efectivo" type="text" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txMerchant">Comercio (opcional)</label>
+          <input cFormControl formControlName="merchant" id="txMerchant" placeholder="Ej. Éxito, Netflix" type="text" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="txTags">Etiquetas (separadas por coma)</label>
+          <input cFormControl formControlName="tags" id="txTags" placeholder="Ej. viaje, trabajo" type="text" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="txDescription">Descripción (opcional)</label>
+          <input cFormControl formControlName="description" id="txDescription" type="text" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="txNotes">Notas (opcional)</label>
+          <textarea cFormControl formControlName="notes" id="txNotes" rows="2"></textarea>
+        </c-col>
+        <c-col xs="12">
+          <c-form-check>
+            <input cFormCheckInput formControlName="isRecurring" id="txRecurring" type="checkbox" />
+            <label cFormCheckLabel for="txRecurring">Es una transacción recurrente</label>
+          </c-form-check>
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="modalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>

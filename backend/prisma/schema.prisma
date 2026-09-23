@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  BANK
+  CREDIT_CARD
+  CASH
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+}
+
+model Account {
+  id             String        @id @default(uuid())
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  name           String
+  type           AccountType
+  institution    String?
+  currency       String        @default("COP")
+  initialBalance Decimal       @default(0) @db.Decimal(14, 2)
+  color          String?
+  archived       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  transactions   Transaction[]
+
+  @@index([userId])
+}
+
+model Category {
+  id           String           @id @default(uuid())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  name         String
+  type         TransactionType
+  icon         String?
+  color        String?
+  parent       Category?        @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: SetNull)
+  parentId     String?
+  subcategories Category[]      @relation("CategoryToSubcategory")
+  transactions Transaction[]
+  createdAt    DateTime         @default(now())
+
+  @@index([userId])
+  @@unique([userId, name, parentId])
+}
+
+model Transaction {
+  id            String           @id @default(uuid())
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  account       Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId     String
+  category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId    String?
+  type          TransactionType
+  amount        Decimal          @db.Decimal(14, 2)
+  currency      String           @default("COP")
+  date          DateTime
+  merchant      String?
+  description   String?
+  paymentMethod String?
+  tags          String[]         @default([])
+  isRecurring   Boolean          @default(false)
+  notes         String?
+  externalRef   String?          @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId, date])
+  @@index([accountId])
+  @@index([categoryId])
+}

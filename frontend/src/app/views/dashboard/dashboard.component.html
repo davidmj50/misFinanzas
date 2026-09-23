@@ -1,0 +1,77 @@
+<c-row class="mb-4">
+  <c-col md="4">
+    <c-card class="text-center">
+      <c-card-body>
+        <div class="text-body-secondary">Ingresos (últimos 12 meses)</div>
+        <div class="fs-4 fw-semibold text-success">{{ summary()?.totalIncome ?? 0 | number: '1.0-2' }}</div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+  <c-col md="4">
+    <c-card class="text-center">
+      <c-card-body>
+        <div class="text-body-secondary">Gastos (últimos 12 meses)</div>
+        <div class="fs-4 fw-semibold text-danger">{{ summary()?.totalExpense ?? 0 | number: '1.0-2' }}</div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+  <c-col md="4">
+    <c-card class="text-center">
+      <c-card-body>
+        <div class="text-body-secondary">Balance</div>
+        <div class="fs-4 fw-semibold" [class.text-success]="balance >= 0" [class.text-danger]="balance < 0">
+          {{ balance | number: '1.0-2' }}
+        </div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-row class="mb-4">
+  <c-col xs="12">
+    <c-card>
+      <c-card-header>
+        <strong>Ingresos vs. Gastos por mes</strong>
+      </c-card-header>
+      <c-card-body>
+        <c-chart [data]="chartData" [height]="300" [options]="chartOptions" type="bar">
+          Gráfico de ingresos vs. gastos
+        </c-chart>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-row>
+  <c-col xs="12">
+    <c-card>
+      <c-card-header>
+        <strong>Principales categorías de gasto</strong>
+      </c-card-header>
+      <c-card-body>
+        <table [hover]="true" [responsive]="true" align="middle" cTable class="mb-0 border">
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (category of topExpenseCategories; track category.categoryId) {
+              <tr>
+                <td><c-badge color="danger">{{ category.categoryName }}</c-badge></td>
+                <td class="text-end">{{ category.total | number: '1.0-2' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="2" class="text-center text-body-secondary py-4">
+                  @if (loading()) { Cargando... } @else { Aún no hay gastos registrados. }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
