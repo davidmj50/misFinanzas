@@ -9,6 +9,7 @@ import { CategoriesModule } from './categories/categories.module.js';
 import { TransactionsModule } from './transactions/transactions.module.js';
 import { UsersModule } from './users/users.module.js';
 import { BudgetsModule } from './budgets/budgets.module.js';
+import { RecurringPaymentsModule } from './recurring-payments/recurring-payments.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BudgetsModule } from './budgets/budgets.module.js';
     TransactionsModule,
     UsersModule,
     BudgetsModule,
+    RecurringPaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

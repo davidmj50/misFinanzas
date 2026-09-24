@@ -1,0 +1,119 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Pagos recurrentes</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="accounts().length === 0">
+          + Nuevo pago recurrente
+        </button>
+      </c-card-header>
+      <c-card-body>
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+        @if (accounts().length === 0) {
+          <c-alert color="warning">Primero crea una cuenta para poder registrar pagos recurrentes.</c-alert>
+        }
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 border">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Cuenta</th>
+              <th>Categoría</th>
+              <th class="text-end">Monto esperado</th>
+              <th>Día de cobro</th>
+              <th>Próximo vencimiento</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of payments(); track payment.id) {
+              <tr [class.opacity-50]="!payment.active">
+                <td>{{ payment.name }}</td>
+                <td>{{ payment.account.name }}</td>
+                <td>{{ payment.category?.name || 'Sin categoría' }}</td>
+                <td class="text-end">{{ payment.amount | number: '1.0-2' }}</td>
+                <td>Día {{ payment.dueDay }}</td>
+                <td>
+                  @if (payment.active) {
+                    <c-badge [color]="dueBadgeColor(payment.daysUntilDue)">{{ dueLabel(payment.daysUntilDue) }}</c-badge>
+                  } @else {
+                    <span class="text-body-secondary">Pausado</span>
+                  }
+                </td>
+                <td>
+                  <button cButton color="secondary" size="sm" variant="outline" (click)="toggleActive(payment)">
+                    {{ payment.active ? 'Pausar' : 'Reanudar' }}
+                  </button>
+                </td>
+                <td class="text-end">
+                  <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(payment)">Editar</button>
+                  <button cButton color="danger" size="sm" variant="outline" (click)="remove(payment)">Eliminar</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="text-center text-body-secondary py-4">
+                  @if (loading()) { Cargando... } @else { No tienes pagos recurrentes configurados. }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="modalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>{{ editingId() ? 'Editar pago recurrente' : 'Nuevo pago recurrente' }}</h5>
+    <button (click)="modalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="form" (ngSubmit)="save()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col xs="12">
+          <label cLabel for="name">Nombre</label>
+          <input cFormControl formControlName="name" id="name" placeholder="Ej. Suscripción Claude" type="text" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="accountId">Cuenta</label>
+          <select cSelect formControlName="accountId" id="accountId">
+            @for (account of accounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }}</option>
+            }
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="categoryId">Categoría (opcional)</label>
+          <select cSelect formControlName="categoryId" id="categoryId">
+            <option value="">Sin categoría</option>
+            @for (category of expenseCategories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="amount">Monto esperado</label>
+          <input cFormControl formControlName="amount" id="amount" step="0.01" type="number" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="dueDay">Día del mes en que se cobra</label>
+          <input cFormControl formControlName="dueDay" id="dueDay" max="31" min="1" type="number" />
+        </c-col>
+        <c-col xs="12">
+          <c-form-check>
+            <input cFormCheckInput formControlName="active" id="active" type="checkbox" />
+            <label cFormCheckLabel for="active">Activo</label>
+          </c-form-check>
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="modalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>

@@ -36,6 +36,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/budgets/routes').then((m) => m.routes)
       },
       {
+        path: 'recurring-payments',
+        loadChildren: () => import('./views/recurring-payments/routes').then((m) => m.routes)
+      },
+      {
         path: 'users',
         loadChildren: () => import('./views/users/routes').then((m) => m.routes)
       },

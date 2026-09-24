@@ -27,6 +27,11 @@ export const navItems: INavData[] = [
     iconComponent: { name: 'cil-calculator' }
   },
   {
+    name: 'Pagos recurrentes',
+    url: '/recurring-payments',
+    iconComponent: { name: 'cil-bell' }
+  },
+  {
     name: 'Usuarios',
     url: '/users',
     iconComponent: { name: 'cil-people' }

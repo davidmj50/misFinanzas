@@ -31,10 +31,11 @@ model User {
   role         UserRole      @default(USER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  accounts     Account[]
-  categories   Category[]
-  transactions Transaction[]
-  budgets      Budget[]
+  accounts          Account[]
+  categories        Category[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  recurringPayments RecurringPayment[]
 }
 
 model Account {
@@ -51,6 +52,7 @@ model Account {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   transactions   Transaction[]
+  recurringPayments RecurringPayment[]
 
   @@index([userId])
 }
@@ -68,6 +70,7 @@ model Category {
   subcategories Category[]      @relation("CategoryToSubcategory")
   transactions Transaction[]
   budgets      Budget[]
+  recurringPayments RecurringPayment[]
   createdAt    DateTime         @default(now())
 
   @@index([userId])
@@ -112,5 +115,23 @@ model Budget {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, categoryId])
+  @@index([userId])
+}
+
+model RecurringPayment {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  String
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
+  name       String
+  amount     Decimal   @db.Decimal(14, 2)
+  dueDay     Int
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
   @@index([userId])
 }
