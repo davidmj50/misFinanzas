@@ -25,6 +25,11 @@ export class AccountsController {
     return this.accountsService.findOne(user.userId, id);
   }
 
+  @Get(':id/balance-history')
+  getBalanceHistory(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.accountsService.getBalanceHistory(user.userId, id);
+  }
+
   @Patch(':id')
   update(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateAccountDto) {
     return this.accountsService.update(user.userId, id, dto);

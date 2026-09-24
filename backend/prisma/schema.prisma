@@ -34,6 +34,7 @@ model User {
   accounts     Account[]
   categories   Category[]
   transactions Transaction[]
+  budgets      Budget[]
 }
 
 model Account {
@@ -66,6 +67,7 @@ model Category {
   parentId     String?
   subcategories Category[]      @relation("CategoryToSubcategory")
   transactions Transaction[]
+  budgets      Budget[]
   createdAt    DateTime         @default(now())
 
   @@index([userId])
@@ -97,4 +99,18 @@ model Transaction {
   @@index([userId, date])
   @@index([accountId])
   @@index([categoryId])
+}
+
+model Budget {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  amount     Decimal  @db.Decimal(14, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, categoryId])
+  @@index([userId])
 }

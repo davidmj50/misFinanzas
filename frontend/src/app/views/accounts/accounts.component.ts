@@ -1,5 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChartData, ChartOptions } from 'chart.js';
+import { getStyle } from '@coreui/utils';
 import {
   AlertComponent,
   BadgeComponent,
@@ -21,6 +24,7 @@ import {
   RowComponent,
   TableDirective,
 } from '@coreui/angular';
+import { ChartjsComponent } from '@coreui/angular-chartjs';
 import { AccountsService } from '../../core/services/accounts.service';
 import { Account, AccountType } from '../../core/models/finance.models';
 
@@ -41,7 +45,9 @@ const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
     CardBodyComponent,
     CardComponent,
     CardHeaderComponent,
+    ChartjsComponent,
     ColComponent,
+    DecimalPipe,
     FormControlDirective,
     FormDirective,
     FormLabelDirective,
@@ -62,6 +68,12 @@ export class AccountsComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly modalVisible = signal(false);
   readonly editingId = signal<string | null>(null);
+
+  readonly historyModalVisible = signal(false);
+  readonly historyAccount = signal<Account | null>(null);
+  readonly historyLoading = signal(false);
+  chartData: ChartData = { labels: [], datasets: [] };
+  chartOptions: ChartOptions = {};
 
   readonly accountTypeLabel = ACCOUNT_TYPE_LABEL;
   readonly accountTypes: AccountType[] = ['BANK', 'CREDIT_CARD', 'CASH'];
@@ -145,5 +157,51 @@ export class AccountsComponent implements OnInit {
       next: () => this.load(),
       error: () => this.errorMessage.set('No se pudo eliminar la cuenta.'),
     });
+  }
+
+  openHistory(account: Account) {
+    this.historyAccount.set(account);
+    this.historyModalVisible.set(true);
+    this.historyLoading.set(true);
+    this.accountsService.getBalanceHistory(account.id).subscribe({
+      next: (points) => {
+        this.buildChart(points);
+        this.historyLoading.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('No se pudo cargar la evolución de la cuenta.');
+        this.historyLoading.set(false);
+      },
+    });
+  }
+
+  private buildChart(points: { month: string; balance: number }[]) {
+    const primary = getStyle('--cui-primary') ?? '#3b82f6';
+    const primaryBg = `rgba(${getStyle('--cui-primary-rgb')}, .1)`;
+    const borderColor = getStyle('--cui-border-color-translucent');
+    const bodyColor = getStyle('--cui-body-color');
+
+    this.chartData = {
+      labels: points.map((p) => p.month),
+      datasets: [
+        {
+          label: 'Saldo',
+          data: points.map((p) => p.balance),
+          borderColor: primary,
+          backgroundColor: primaryBg,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    };
+
+    this.chartOptions = {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: borderColor, drawOnChartArea: false }, ticks: { color: bodyColor } },
+        y: { grid: { color: borderColor }, ticks: { color: bodyColor } },
+      },
+    };
   }
 }

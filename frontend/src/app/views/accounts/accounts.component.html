@@ -15,7 +15,7 @@
               <th>Nombre</th>
               <th>Tipo</th>
               <th>Entidad</th>
-              <th class="text-end">Saldo inicial</th>
+              <th class="text-end">Saldo actual</th>
               <th>Moneda</th>
               <th class="text-end">Acciones</th>
             </tr>
@@ -26,9 +26,12 @@
                 <td>{{ account.name }}</td>
                 <td><c-badge color="info">{{ accountTypeLabel[account.type] }}</c-badge></td>
                 <td>{{ account.institution || '—' }}</td>
-                <td class="text-end">{{ account.initialBalance }}</td>
+                <td class="text-end" [class.text-danger]="(account.balance ?? 0) < 0" [class.text-success]="(account.balance ?? 0) >= 0">
+                  {{ account.balance ?? account.initialBalance | number: '1.0-2' }}
+                </td>
                 <td>{{ account.currency }}</td>
                 <td class="text-end">
+                  <button cButton color="info" size="sm" variant="outline" class="me-2" (click)="openHistory(account)">Evolución</button>
                   <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(account)">Editar</button>
                   <button cButton color="danger" size="sm" variant="outline" (click)="remove(account)">Eliminar</button>
                 </td>
@@ -86,4 +89,25 @@
       <button cButton color="primary" type="submit">Guardar</button>
     </c-modal-footer>
   </form>
+</c-modal>
+
+<c-modal [(visible)]="historyModalVisible" size="lg">
+  <c-modal-header>
+    <h5 cModalTitle>Evolución de saldo — {{ historyAccount()?.name }}</h5>
+    <button (click)="historyModalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <c-modal-body>
+    @if (historyLoading()) {
+      <p class="text-body-secondary text-center py-4">Cargando...</p>
+    } @else if (chartData.labels && chartData.labels.length > 0) {
+      <c-chart [data]="chartData" [height]="300" [options]="chartOptions" type="line">
+        Evolución de saldo
+      </c-chart>
+    } @else {
+      <p class="text-body-secondary text-center py-4">Esta cuenta todavía no tiene transacciones.</p>
+    }
+  </c-modal-body>
+  <c-modal-footer>
+    <button (click)="historyModalVisible.set(false)" cButton color="secondary" type="button">Cerrar</button>
+  </c-modal-footer>
 </c-modal>

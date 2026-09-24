@@ -8,6 +8,7 @@ import { AccountsModule } from './accounts/accounts.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { TransactionsModule } from './transactions/transactions.module.js';
 import { UsersModule } from './users/users.module.js';
+import { BudgetsModule } from './budgets/budgets.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module.js';
     CategoriesModule,
     TransactionsModule,
     UsersModule,
+    BudgetsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

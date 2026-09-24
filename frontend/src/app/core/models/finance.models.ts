@@ -8,10 +8,16 @@ export interface Account {
   institution?: string | null;
   currency: string;
   initialBalance: string;
+  balance?: number;
   color?: string | null;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AccountBalancePoint {
+  month: string;
+  balance: number;
 }
 
 export type CreateAccountPayload = Pick<Account, 'name' | 'type'> &
