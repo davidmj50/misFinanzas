@@ -1,11 +1,17 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { EmailService } from '../email/email.service.js';
 import { CreateRecurringPaymentDto } from './dto/create-recurring-payment.dto.js';
 import { UpdateRecurringPaymentDto } from './dto/update-recurring-payment.dto.js';
 
+const REMINDER_THRESHOLD_DAYS = 3;
+
 @Injectable()
 export class RecurringPaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   create(userId: string, dto: CreateRecurringPaymentDto) {
     return this.prisma.recurringPayment.create({
@@ -45,6 +51,43 @@ export class RecurringPaymentsService {
   async remove(userId: string, id: string) {
     await this.findOwned(userId, id);
     await this.prisma.recurringPayment.delete({ where: { id } });
+  }
+
+  async checkAndSendReminders() {
+    const payments = await this.prisma.recurringPayment.findMany({
+      where: { active: true },
+      include: { user: true, account: true },
+    });
+
+    let sent = 0;
+    for (const payment of payments) {
+      const { nextDueDate, daysUntilDue } = this.computeDueInfo(payment.dueDay);
+      if (daysUntilDue > REMINDER_THRESHOLD_DAYS) continue;
+
+      const nextDueDateOnly = nextDueDate.slice(0, 10);
+      const lastNotified = payment.lastNotifiedFor?.toISOString().slice(0, 10) ?? null;
+      if (lastNotified === nextDueDateOnly) continue;
+
+      const amount = Number(payment.amount).toLocaleString('es-CO');
+      const dueLabel = daysUntilDue <= 0 ? 'hoy' : daysUntilDue === 1 ? 'mañana' : `en ${daysUntilDue} días`;
+      const subject = `Recordatorio: ${payment.name} vence ${dueLabel}`;
+      const html = `
+        <p>Hola ${payment.user.name},</p>
+        <p>Tu pago recurrente <strong>${payment.name}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${payment.account.name}</strong>.</p>
+        <p>— MisFinanzas</p>
+      `;
+
+      const success = await this.emailService.send(payment.user.email, subject, html);
+      if (success) {
+        await this.prisma.recurringPayment.update({
+          where: { id: payment.id },
+          data: { lastNotifiedFor: new Date(nextDueDateOnly) },
+        });
+        sent += 1;
+      }
+    }
+
+    return { checked: payments.length, sent };
   }
 
   private computeDueInfo(dueDay: number) {
