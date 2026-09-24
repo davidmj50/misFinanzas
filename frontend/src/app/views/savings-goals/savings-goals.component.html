@@ -1,0 +1,144 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Metas de ahorro</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()">+ Nueva meta</button>
+      </c-card-header>
+      <c-card-body>
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+
+        @for (goal of goals(); track goal.id) {
+          <div class="mb-4 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div>
+                <strong>{{ goal.name }}</strong>
+                <span class="text-body-secondary ms-2 small">
+                  {{ goal.saved | number: '1.0-2' }} / {{ goal.targetAmount | number: '1.0-2' }}
+                  ({{ goal.percentage }}%)
+                </span>
+              </div>
+              <div>
+                <button cButton color="success" size="sm" variant="outline" class="me-2" (click)="openContribution(goal.id)">+ Aporte</button>
+                <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(goal)">Editar</button>
+                <button cButton color="danger" size="sm" variant="outline" (click)="remove(goal)">Eliminar</button>
+              </div>
+            </div>
+            <c-progress [value]="goal.percentage > 100 ? 100 : goal.percentage" [color]="progressColor(goal.percentage)" aria-label="Progreso de la meta" />
+            <div class="d-flex justify-content-between mt-1">
+              <div class="small text-body-secondary">
+                @if (goal.remaining > 0) {
+                  Faltan {{ goal.remaining | number: '1.0-2' }}
+                } @else {
+                  ¡Meta alcanzada! 🎉
+                }
+                @if (goal.daysRemaining !== null) {
+                  · {{ goal.daysRemaining >= 0 ? goal.daysRemaining + ' días restantes' : 'fecha vencida' }}
+                  @if (goal.suggestedMonthly && goal.suggestedMonthly > 0) {
+                    · sugerido {{ goal.suggestedMonthly | number: '1.0-2' }}/mes
+                  }
+                }
+              </div>
+              <button cButton color="link" size="sm" class="p-0" (click)="toggleExpanded(goal.id)">
+                {{ isExpanded(goal.id) ? 'Ocultar aportes' : 'Ver aportes (' + goal.contributions.length + ')' }}
+              </button>
+            </div>
+
+            @if (isExpanded(goal.id)) {
+              <table [hover]="true" [responsive]="true" [small]="true" align="middle" cTable class="mt-2 mb-0 border">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Nota</th>
+                    <th class="text-end">Monto</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (contribution of goal.contributions; track contribution.id) {
+                    <tr>
+                      <td>{{ contribution.date | date: 'yyyy-MM-dd' }}</td>
+                      <td>{{ contribution.note || '-' }}</td>
+                      <td class="text-end">{{ contribution.amount | number: '1.0-2' }}</td>
+                      <td class="text-end">
+                        <button cButton color="danger" size="sm" variant="ghost" (click)="removeContribution(goal.id, contribution.id)">Eliminar</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="text-center text-body-secondary py-2">Sin aportes registrados.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        } @empty {
+          @if (!loading()) {
+            <p class="text-body-secondary text-center py-4">Aún no tienes metas de ahorro. Crea una para empezar a hacerle seguimiento.</p>
+          }
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="goalModalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>{{ editingId() ? 'Editar meta' : 'Nueva meta de ahorro' }}</h5>
+    <button (click)="goalModalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="goalForm" (ngSubmit)="saveGoal()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col xs="12">
+          <label cLabel for="name">Nombre</label>
+          <input cFormControl formControlName="name" id="name" placeholder="Ej. Vacaciones diciembre" type="text" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="targetAmount">Monto objetivo</label>
+          <input cFormControl formControlName="targetAmount" id="targetAmount" step="0.01" type="number" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="targetDate">Fecha objetivo (opcional)</label>
+          <input cFormControl formControlName="targetDate" id="targetDate" type="date" />
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="goalModalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>
+
+<c-modal [(visible)]="contributionModalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>Nuevo aporte</h5>
+    <button (click)="contributionModalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="contributionForm" (ngSubmit)="saveContribution()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col md="6">
+          <label cLabel for="amount">Monto (usa negativo para retirar)</label>
+          <input cFormControl formControlName="amount" id="amount" step="0.01" type="number" />
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="date">Fecha</label>
+          <input cFormControl formControlName="date" id="date" type="date" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="note">Nota (opcional)</label>
+          <input cFormControl formControlName="note" id="note" type="text" />
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="contributionModalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>

@@ -10,6 +10,7 @@ import { TransactionsModule } from './transactions/transactions.module.js';
 import { UsersModule } from './users/users.module.js';
 import { BudgetsModule } from './budgets/budgets.module.js';
 import { RecurringPaymentsModule } from './recurring-payments/recurring-payments.module.js';
+import { SavingsGoalsModule } from './savings-goals/savings-goals.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RecurringPaymentsModule } from './recurring-payments/recurring-payments
     UsersModule,
     BudgetsModule,
     RecurringPaymentsModule,
+    SavingsGoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

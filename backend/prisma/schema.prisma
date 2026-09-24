@@ -36,6 +36,7 @@ model User {
   transactions      Transaction[]
   budgets           Budget[]
   recurringPayments RecurringPayment[]
+  savingsGoals      SavingsGoal[]
 }
 
 model Account {
@@ -135,4 +136,32 @@ model RecurringPayment {
   updatedAt  DateTime  @updatedAt
 
   @@index([userId])
+}
+
+model SavingsGoal {
+  id            String                @id @default(uuid())
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  name          String
+  targetAmount  Decimal               @db.Decimal(14, 2)
+  targetDate    DateTime?             @db.Date
+  color         String?
+  archived      Boolean               @default(false)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  contributions SavingsContribution[]
+
+  @@index([userId])
+}
+
+model SavingsContribution {
+  id        String      @id @default(uuid())
+  goal      SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goalId    String
+  amount    Decimal     @db.Decimal(14, 2)
+  date      DateTime    @db.Date
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@index([goalId])
 }

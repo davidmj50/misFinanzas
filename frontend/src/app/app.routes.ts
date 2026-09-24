@@ -40,6 +40,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/recurring-payments/routes').then((m) => m.routes)
       },
       {
+        path: 'savings-goals',
+        loadChildren: () => import('./views/savings-goals/routes').then((m) => m.routes)
+      },
+      {
         path: 'users',
         loadChildren: () => import('./views/users/routes').then((m) => m.routes)
       },
