@@ -17,8 +17,10 @@ import { ChartjsComponent } from '@coreui/angular-chartjs';
 import { TransactionsService } from '../../core/services/transactions.service';
 import { BudgetsService } from '../../core/services/budgets.service';
 import { AccountsService } from '../../core/services/accounts.service';
+import { SavingsGoalsService } from '../../core/services/savings-goals.service';
 import { TransactionSummary, Account } from '../../core/models/finance.models';
 import { Budget } from '../../core/models/budget.models';
+import { SavingsGoal } from '../../core/models/savings-goal.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -42,6 +44,7 @@ export class DashboardComponent implements OnInit {
   readonly loading = signal(false);
   readonly accounts = signal<Account[]>([]);
   readonly budgets = signal<Budget[]>([]);
+  readonly savingsGoals = signal<SavingsGoal[]>([]);
 
   chartData: ChartData = { labels: [], datasets: [] };
   chartOptions: ChartOptions = {};
@@ -50,6 +53,7 @@ export class DashboardComponent implements OnInit {
     private readonly transactionsService: TransactionsService,
     private readonly budgetsService: BudgetsService,
     private readonly accountsService: AccountsService,
+    private readonly savingsGoalsService: SavingsGoalsService,
   ) {}
 
   ngOnInit(): void {
@@ -68,12 +72,19 @@ export class DashboardComponent implements OnInit {
 
     this.accountsService.list().subscribe((accounts) => this.accounts.set(accounts.filter((a) => !a.archived)));
     this.budgetsService.list().subscribe((budgets) => this.budgets.set(budgets));
+    this.savingsGoalsService.list().subscribe((goals) => this.savingsGoals.set(goals.filter((g) => !g.archived)));
   }
 
   progressColor(percentage: number): string {
     if (percentage >= 100) return 'danger';
     if (percentage >= 80) return 'warning';
     return 'success';
+  }
+
+  savingsProgressColor(percentage: number): string {
+    if (percentage >= 100) return 'success';
+    if (percentage >= 50) return 'info';
+    return 'warning';
   }
 
   get balance(): number {

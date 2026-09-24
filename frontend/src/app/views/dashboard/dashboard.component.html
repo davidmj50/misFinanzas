@@ -28,7 +28,7 @@
 </c-row>
 
 <c-row class="mb-4">
-  <c-col lg="6">
+  <c-col lg="4">
     <c-card class="h-100">
       <c-card-header class="d-flex justify-content-between align-items-center">
         <strong>Saldo por cuenta</strong>
@@ -53,7 +53,7 @@
       </c-card-body>
     </c-card>
   </c-col>
-  <c-col lg="6">
+  <c-col lg="4">
     <c-card class="h-100">
       <c-card-header class="d-flex justify-content-between align-items-center">
         <strong>Presupuestos del mes</strong>
@@ -78,6 +78,36 @@
         } @empty {
           <p class="text-body-secondary text-center py-4 mb-0">
             @if (loading()) { Cargando... } @else { Aún no tienes presupuestos configurados. }
+          </p>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+  <c-col lg="4">
+    <c-card class="h-100">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Metas de ahorro</strong>
+        <a routerLink="/savings-goals" class="small">Ver todas</a>
+      </c-card-header>
+      <c-card-body>
+        @for (goal of savingsGoals(); track goal.id) {
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong class="small">{{ goal.name }}</strong>
+              <span class="text-body-secondary small">
+                {{ goal.saved | number: '1.0-2' }} / {{ goal.targetAmount | number: '1.0-2' }} ({{ goal.percentage }}%)
+              </span>
+            </div>
+            <c-progress
+              [value]="goal.percentage > 100 ? 100 : goal.percentage"
+              [color]="savingsProgressColor(goal.percentage)"
+              [height]="6"
+              aria-label="Progreso de la meta de ahorro"
+            />
+          </div>
+        } @empty {
+          <p class="text-body-secondary text-center py-4 mb-0">
+            @if (loading()) { Cargando... } @else { Aún no tienes metas de ahorro. }
           </p>
         }
       </c-card-body>
