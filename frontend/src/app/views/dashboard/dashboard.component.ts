@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ChartData, ChartOptions } from 'chart.js';
 import { getStyle } from '@coreui/utils';
 import {
@@ -8,12 +9,16 @@ import {
   CardComponent,
   CardHeaderComponent,
   ColComponent,
+  ProgressComponent,
   RowComponent,
   TableDirective,
 } from '@coreui/angular';
 import { ChartjsComponent } from '@coreui/angular-chartjs';
 import { TransactionsService } from '../../core/services/transactions.service';
-import { TransactionSummary } from '../../core/models/finance.models';
+import { BudgetsService } from '../../core/services/budgets.service';
+import { AccountsService } from '../../core/services/accounts.service';
+import { TransactionSummary, Account } from '../../core/models/finance.models';
+import { Budget } from '../../core/models/budget.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,6 +31,8 @@ import { TransactionSummary } from '../../core/models/finance.models';
     ChartjsComponent,
     ColComponent,
     DecimalPipe,
+    ProgressComponent,
+    RouterLink,
     RowComponent,
     TableDirective,
   ],
@@ -33,11 +40,17 @@ import { TransactionSummary } from '../../core/models/finance.models';
 export class DashboardComponent implements OnInit {
   readonly summary = signal<TransactionSummary | null>(null);
   readonly loading = signal(false);
+  readonly accounts = signal<Account[]>([]);
+  readonly budgets = signal<Budget[]>([]);
 
   chartData: ChartData = { labels: [], datasets: [] };
   chartOptions: ChartOptions = {};
 
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly budgetsService: BudgetsService,
+    private readonly accountsService: AccountsService,
+  ) {}
 
   ngOnInit(): void {
     this.loading.set(true);
@@ -52,6 +65,15 @@ export class DashboardComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+
+    this.accountsService.list().subscribe((accounts) => this.accounts.set(accounts.filter((a) => !a.archived)));
+    this.budgetsService.list().subscribe((budgets) => this.budgets.set(budgets));
+  }
+
+  progressColor(percentage: number): string {
+    if (percentage >= 100) return 'danger';
+    if (percentage >= 80) return 'warning';
+    return 'success';
   }
 
   get balance(): number {

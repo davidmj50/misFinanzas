@@ -28,6 +28,64 @@
 </c-row>
 
 <c-row class="mb-4">
+  <c-col lg="6">
+    <c-card class="h-100">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Saldo por cuenta</strong>
+        <a routerLink="/accounts" class="small">Ver todas</a>
+      </c-card-header>
+      <c-card-body>
+        @for (account of accounts(); track account.id) {
+          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div>
+              <div class="fw-semibold">{{ account.name }}</div>
+              <div class="text-body-secondary small">{{ account.institution || account.type }}</div>
+            </div>
+            <div class="fw-semibold" [class.text-success]="(account.balance ?? 0) >= 0" [class.text-danger]="(account.balance ?? 0) < 0">
+              {{ account.balance ?? 0 | number: '1.0-2' }}
+            </div>
+          </div>
+        } @empty {
+          <p class="text-body-secondary text-center py-4 mb-0">
+            @if (loading()) { Cargando... } @else { Aún no tienes cuentas registradas. }
+          </p>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+  <c-col lg="6">
+    <c-card class="h-100">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Presupuestos del mes</strong>
+        <a routerLink="/budgets" class="small">Ver todos</a>
+      </c-card-header>
+      <c-card-body>
+        @for (budget of budgets(); track budget.id) {
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong class="small">{{ budget.category.name }}</strong>
+              <span class="text-body-secondary small">
+                {{ budget.spent | number: '1.0-2' }} / {{ budget.amount | number: '1.0-2' }} ({{ budget.percentage }}%)
+              </span>
+            </div>
+            <c-progress
+              [value]="budget.percentage > 100 ? 100 : budget.percentage"
+              [color]="progressColor(budget.percentage)"
+              [height]="6"
+              aria-label="Progreso del presupuesto"
+            />
+          </div>
+        } @empty {
+          <p class="text-body-secondary text-center py-4 mb-0">
+            @if (loading()) { Cargando... } @else { Aún no tienes presupuestos configurados. }
+          </p>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-row class="mb-4">
   <c-col xs="12">
     <c-card>
       <c-card-header>
