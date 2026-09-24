@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 
@@ -24,7 +25,7 @@ export class AuthService {
       data: { email: dto.email, passwordHash, name: dto.name },
     });
 
-    return this.buildToken(user.id, user.email, user.name);
+    return this.buildToken(user);
   }
 
   async validateUser(email: string, password: string) {
@@ -37,12 +38,12 @@ export class AuthService {
     return user;
   }
 
-  async login(userId: string, email: string, name: string) {
-    return this.buildToken(userId, email, name);
+  async login(user: User) {
+    return this.buildToken(user);
   }
 
-  private buildToken(userId: string, email: string, name: string) {
-    const accessToken = this.jwtService.sign({ sub: userId, email });
-    return { accessToken, user: { id: userId, email, name } };
+  private buildToken(user: User) {
+    const accessToken = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    return { accessToken, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
   }
 }

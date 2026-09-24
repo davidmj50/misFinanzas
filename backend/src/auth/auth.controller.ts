@@ -21,7 +21,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   login(@Body() _dto: LoginDto, @Req() req: Request & { user: User }) {
-    return this.authService.login(req.user.id, req.user.email, req.user.name);
+    return this.authService.login(req.user);
   }
 
   @Get('me')

@@ -22,6 +22,11 @@ export const navItems: INavData[] = [
     iconComponent: { name: 'cil-tags' }
   },
   {
+    name: 'Usuarios',
+    url: '/users',
+    iconComponent: { name: 'cil-people' }
+  },
+  {
     title: true,
     name: 'UI Elements (plantilla CoreUI)'
   },

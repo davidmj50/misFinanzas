@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { TransactionsModule } from './transactions/transactions.module.js';
+import { UsersModule } from './users/users.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TransactionsModule } from './transactions/transactions.module.js';
     AccountsModule,
     CategoriesModule,
     TransactionsModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

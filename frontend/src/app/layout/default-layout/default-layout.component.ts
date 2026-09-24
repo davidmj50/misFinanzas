@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { NgScrollbar } from 'ngx-scrollbar';
+import { AuthService } from '../../core/services/auth.service';
 
 import { IconDirective } from '@coreui/icons-angular';
 import {
@@ -48,5 +49,6 @@ function isOverflown(element: HTMLElement) {
   ]
 })
 export class DefaultLayoutComponent {
-  public navItems = [...navItems];
+  private readonly authService = inject(AuthService);
+  public navItems = navItems.filter((item) => item.url !== '/users' || this.authService.isAdmin());
 }

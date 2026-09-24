@@ -1,0 +1,98 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Usuarios</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()">+ Nuevo usuario</button>
+      </c-card-header>
+      <c-card-body>
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 border">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Creado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <c-badge [color]="user.role === 'ADMIN' ? 'warning' : 'info'">{{ roleLabel[user.role] }}</c-badge>
+                </td>
+                <td>{{ user.createdAt.slice(0, 10) }}</td>
+                <td class="text-end">
+                  <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(user)">Editar</button>
+                  <button
+                    cButton
+                    color="danger"
+                    size="sm"
+                    variant="outline"
+                    [disabled]="user.id === authService.currentUser()?.id"
+                    [title]="user.id === authService.currentUser()?.id ? 'No puedes eliminar tu propia cuenta' : ''"
+                    (click)="remove(user)"
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center text-body-secondary py-4">
+                  @if (loading()) { Cargando... } @else { No hay usuarios registrados. }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="modalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>{{ editingId() ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
+    <button (click)="modalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="form" (ngSubmit)="save()">
+    <c-modal-body>
+      <c-row class="gy-3">
+        <c-col xs="12">
+          <label cLabel for="name">Nombre</label>
+          <input cFormControl formControlName="name" id="name" placeholder="Nombre completo" type="text" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="email">Correo electrónico</label>
+          <input cFormControl formControlName="email" id="email" placeholder="correo@ejemplo.com" type="email" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="role">Rol</label>
+          <select cSelect formControlName="role" id="role">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ roleLabel[role] }}</option>
+            }
+          </select>
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="password">Contraseña</label>
+          <input cFormControl formControlName="password" id="password" placeholder="Mínimo 8 caracteres" type="password" />
+          @if (editingId()) {
+            <div cFormText>Déjala en blanco para no cambiarla.</div>
+          }
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="modalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>
