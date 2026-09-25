@@ -1,8 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../email/email.service.js';
+import { escapeHtml } from '../email/escape-html.js';
 import { CreateRecurringPaymentDto } from './dto/create-recurring-payment.dto.js';
 import { UpdateRecurringPaymentDto } from './dto/update-recurring-payment.dto.js';
+import { assertAccountOwned, assertCategoryOwned } from '../common/ownership.js';
 
 const REMINDER_THRESHOLD_DAYS = 3;
 
@@ -13,7 +15,9 @@ export class RecurringPaymentsService {
     private readonly emailService: EmailService,
   ) {}
 
-  create(userId: string, dto: CreateRecurringPaymentDto) {
+  async create(userId: string, dto: CreateRecurringPaymentDto) {
+    await assertAccountOwned(this.prisma, userId, dto.accountId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
     return this.prisma.recurringPayment.create({
       data: { ...dto, userId },
       include: { account: true, category: true },
@@ -41,6 +45,8 @@ export class RecurringPaymentsService {
 
   async update(userId: string, id: string, dto: UpdateRecurringPaymentDto) {
     await this.findOwned(userId, id);
+    if (dto.accountId) await assertAccountOwned(this.prisma, userId, dto.accountId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
     return this.prisma.recurringPayment.update({
       where: { id },
       data: dto,
@@ -72,8 +78,8 @@ export class RecurringPaymentsService {
       const dueLabel = daysUntilDue <= 0 ? 'hoy' : daysUntilDue === 1 ? 'mañana' : `en ${daysUntilDue} días`;
       const subject = `Recordatorio: ${payment.name} vence ${dueLabel}`;
       const html = `
-        <p>Hola ${payment.user.name},</p>
-        <p>Tu pago recurrente <strong>${payment.name}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${payment.account.name}</strong>.</p>
+        <p>Hola ${escapeHtml(payment.user.name)},</p>
+        <p>Tu pago recurrente <strong>${escapeHtml(payment.name)}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${escapeHtml(payment.account.name)}</strong>.</p>
         <p>— MisFinanzas</p>
       `;
 
