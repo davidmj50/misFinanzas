@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../email/email.service.js';
+import { escapeHtml } from '../email/escape-html.js';
 import { CreateRecurringPaymentDto } from './dto/create-recurring-payment.dto.js';
 import { UpdateRecurringPaymentDto } from './dto/update-recurring-payment.dto.js';
 import { assertAccountOwned, assertCategoryOwned } from '../common/ownership.js';
@@ -77,8 +78,8 @@ export class RecurringPaymentsService {
       const dueLabel = daysUntilDue <= 0 ? 'hoy' : daysUntilDue === 1 ? 'mañana' : `en ${daysUntilDue} días`;
       const subject = `Recordatorio: ${payment.name} vence ${dueLabel}`;
       const html = `
-        <p>Hola ${payment.user.name},</p>
-        <p>Tu pago recurrente <strong>${payment.name}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${payment.account.name}</strong>.</p>
+        <p>Hola ${escapeHtml(payment.user.name)},</p>
+        <p>Tu pago recurrente <strong>${escapeHtml(payment.name)}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${escapeHtml(payment.account.name)}</strong>.</p>
         <p>— MisFinanzas</p>
       `;
 
