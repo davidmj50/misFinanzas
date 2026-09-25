@@ -95,10 +95,11 @@ model Transaction {
   tags          String[]         @default([])
   isRecurring   Boolean          @default(false)
   notes         String?
-  externalRef   String?          @unique
+  externalRef   String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
+  @@unique([userId, externalRef])
   @@index([userId, date])
   @@index([accountId])
   @@index([categoryId])

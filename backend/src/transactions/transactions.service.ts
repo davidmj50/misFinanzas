@@ -4,13 +4,16 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateTransactionDto } from './dto/create-transaction.dto.js';
 import { UpdateTransactionDto } from './dto/update-transaction.dto.js';
 import { QueryTransactionDto } from './dto/query-transaction.dto.js';
+import { assertAccountOwned, assertCategoryOwned } from '../common/ownership.js';
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(userId: string, dto: CreateTransactionDto) {
+  async create(userId: string, dto: CreateTransactionDto) {
     const { accountId, categoryId, ...rest } = dto;
+    await assertAccountOwned(this.prisma, userId, accountId);
+    if (categoryId) await assertCategoryOwned(this.prisma, userId, categoryId);
     return this.prisma.transaction.create({
       data: {
         ...rest,
@@ -78,6 +81,8 @@ export class TransactionsService {
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
     await this.findOne(userId, id);
     const { accountId, categoryId, date, ...rest } = dto;
+    if (accountId) await assertAccountOwned(this.prisma, userId, accountId);
+    if (categoryId) await assertCategoryOwned(this.prisma, userId, categoryId);
     return this.prisma.transaction.update({
       where: { id },
       data: {

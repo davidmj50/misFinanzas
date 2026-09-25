@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../email/email.service.js';
 import { CreateRecurringPaymentDto } from './dto/create-recurring-payment.dto.js';
 import { UpdateRecurringPaymentDto } from './dto/update-recurring-payment.dto.js';
+import { assertAccountOwned, assertCategoryOwned } from '../common/ownership.js';
 
 const REMINDER_THRESHOLD_DAYS = 3;
 
@@ -13,7 +14,9 @@ export class RecurringPaymentsService {
     private readonly emailService: EmailService,
   ) {}
 
-  create(userId: string, dto: CreateRecurringPaymentDto) {
+  async create(userId: string, dto: CreateRecurringPaymentDto) {
+    await assertAccountOwned(this.prisma, userId, dto.accountId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
     return this.prisma.recurringPayment.create({
       data: { ...dto, userId },
       include: { account: true, category: true },
@@ -41,6 +44,8 @@ export class RecurringPaymentsService {
 
   async update(userId: string, id: string, dto: UpdateRecurringPaymentDto) {
     await this.findOwned(userId, id);
+    if (dto.accountId) await assertAccountOwned(this.prisma, userId, dto.accountId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
     return this.prisma.recurringPayment.update({
       where: { id },
       data: dto,
