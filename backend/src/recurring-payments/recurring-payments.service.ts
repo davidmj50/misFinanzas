@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { daysBetween, daysInMonth, today, utcDate } from '../common/dates.js';
 import { EmailService } from '../email/email.service.js';
 import { escapeHtml } from '../email/escape-html.js';
 import { CreateRecurringPaymentDto } from './dto/create-recurring-payment.dto.js';
@@ -96,30 +97,23 @@ export class RecurringPaymentsService {
     return { checked: payments.length, sent };
   }
 
-  private computeDueInfo(dueDay: number) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Público para poder probarlo con una fecha fija.
+  computeDueInfo(dueDay: number, now = new Date()) {
+    const todayDate = today(now);
+    let year = todayDate.getUTCFullYear();
+    let month = todayDate.getUTCMonth();
+    const dueDateIn = (y: number, m: number) => utcDate(y, m, Math.min(dueDay, daysInMonth(y, m)));
 
-    const clampDay = (year: number, month: number) => {
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      return Math.min(dueDay, daysInMonth);
-    };
-
-    let year = today.getFullYear();
-    let month = today.getMonth();
-    let nextDueDate = new Date(year, month, clampDay(year, month));
-
-    if (nextDueDate < today) {
+    let nextDueDate = dueDateIn(year, month);
+    if (nextDueDate < todayDate) {
       month += 1;
       if (month > 11) {
         month = 0;
         year += 1;
       }
-      nextDueDate = new Date(year, month, clampDay(year, month));
+      nextDueDate = dueDateIn(year, month);
     }
 
-    const daysUntilDue = Math.round((nextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    return { nextDueDate: nextDueDate.toISOString(), daysUntilDue };
+    return { nextDueDate: nextDueDate.toISOString(), daysUntilDue: daysBetween(todayDate, nextDueDate) };
   }
 }

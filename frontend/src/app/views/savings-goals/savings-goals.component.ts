@@ -23,6 +23,7 @@ import {
 } from '@coreui/angular';
 import { SavingsGoalsService } from '../../core/services/savings-goals.service';
 import { SavingsGoal } from '../../core/models/savings-goal.models';
+import { localDateString } from '../../core/utils/dates';
 
 @Component({
   selector: 'app-savings-goals',
@@ -71,7 +72,7 @@ export class SavingsGoalsComponent implements OnInit {
 
   readonly contributionForm = this.fb.nonNullable.group({
     amount: [0, [Validators.required]],
-    date: [new Date().toISOString().slice(0, 10), [Validators.required]],
+    date: [localDateString(), [Validators.required]],
     note: [''],
   });
 
@@ -158,7 +159,7 @@ export class SavingsGoalsComponent implements OnInit {
 
   openContribution(goalId: string) {
     this.contributionGoalId.set(goalId);
-    this.contributionForm.reset({ amount: 0, date: new Date().toISOString().slice(0, 10), note: '' });
+    this.contributionForm.reset({ amount: 0, date: localDateString(), note: '' });
     this.contributionModalVisible.set(true);
   }
 

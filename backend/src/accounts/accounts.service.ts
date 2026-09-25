@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { monthKey } from '../common/dates.js';
 import { CreateAccountDto } from './dto/create-account.dto.js';
 import { UpdateAccountDto } from './dto/update-account.dto.js';
 
@@ -60,7 +61,7 @@ export class AccountsService {
 
     const byMonth = new Map<string, number>();
     for (const t of transactions) {
-      const key = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+      const key = monthKey(t.date);
       const signedAmount = t.type === 'INCOME' ? Number(t.amount) : -Number(t.amount);
       byMonth.set(key, (byMonth.get(key) ?? 0) + signedAmount);
     }

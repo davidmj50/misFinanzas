@@ -30,6 +30,7 @@ import { CategoriesService } from '../../core/services/categories.service';
 import { TransactionsService } from '../../core/services/transactions.service';
 import { Account, Category, Transaction, TransactionType } from '../../core/models/finance.models';
 import { exportTransactionsToExcel, exportTransactionsToPdf } from '../../core/utils/transactions-export';
+import { localDateString } from '../../core/utils/dates';
 
 @Component({
   selector: 'app-transactions',
@@ -88,7 +89,7 @@ export class TransactionsComponent implements OnInit {
     categoryId: [''],
     type: ['EXPENSE' as TransactionType, [Validators.required]],
     amount: [0, [Validators.required, Validators.min(0.01)]],
-    date: [new Date().toISOString().slice(0, 10), [Validators.required]],
+    date: [localDateString(), [Validators.required]],
     merchant: [''],
     description: [''],
     paymentMethod: [''],
@@ -167,7 +168,7 @@ export class TransactionsComponent implements OnInit {
       categoryId: '',
       type: 'EXPENSE',
       amount: 0,
-      date: new Date().toISOString().slice(0, 10),
+      date: localDateString(),
       merchant: '',
       description: '',
       paymentMethod: '',
@@ -263,7 +264,7 @@ export class TransactionsComponent implements OnInit {
     this.exporting.set('excel');
     this.fetchAllFiltered().subscribe({
       next: async (items) => {
-        await exportTransactionsToExcel(items, `transacciones_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        await exportTransactionsToExcel(items, `transacciones_${localDateString()}.xlsx`);
         this.exporting.set(null);
       },
       error: () => {
@@ -277,7 +278,7 @@ export class TransactionsComponent implements OnInit {
     this.exporting.set('pdf');
     this.fetchAllFiltered().subscribe({
       next: (items) => {
-        exportTransactionsToPdf(items, `transacciones_${new Date().toISOString().slice(0, 10)}.pdf`);
+        exportTransactionsToPdf(items, `transacciones_${localDateString()}.pdf`);
         this.exporting.set(null);
       },
       error: () => {

@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { dateKey, monthRange } from '../common/dates.js';
 import { EmailService } from '../email/email.service.js';
 import { CreateBudgetDto } from './dto/create-budget.dto.js';
 import { UpdateBudgetDto } from './dto/update-budget.dto.js';
@@ -65,9 +66,7 @@ export class BudgetsService {
   }
 
   private async spentThisMonthByCategory(userId: string, categoryIds: string[]): Promise<Map<string, number>> {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const { start: monthStart, end: monthEnd } = monthRange();
 
     const spentByCategory = await this.prisma.transaction.groupBy({
       by: ['categoryId'],
@@ -91,8 +90,7 @@ export class BudgetsService {
       spentByUser.set(userId, await this.spentThisMonthByCategory(userId, categoryIds));
     }
 
-    const now = new Date();
-    const monthKey = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const monthKey = dateKey(monthRange().start);
 
     let sent = 0;
     for (const budget of budgets) {
