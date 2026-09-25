@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, tests, build, migraciones)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: misfinanzas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/misfinanzas_test?schema=public
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/shadow
+      JWT_SECRET: ci-jwt-secret
+      CRON_SECRET: ci-cron-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.2"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Tests unitarios
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Aplicar migraciones
+        run: npx prisma migrate deploy
+
+      - name: Verificar que schema.prisma y las migraciones coinciden
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE shadow"
+          npx prisma migrate diff \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
+            --shadow-database-url "$SHADOW_DATABASE_URL" \
+            --exit-code \
+            || { echo "::error::schema.prisma tiene cambios sin migración. Ejecuta 'npm run prisma:migrate' y sube la migración."; exit 1; }
+
+      - name: Tests e2e
+        run: npm run test:e2e
+
+  frontend:
+    name: Frontend (tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.2"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegador para los tests
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Tests
+        run: npx ng test --watch=false
+
+      - name: Build de producción
+        run: npx ng build --configuration production
