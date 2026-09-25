@@ -1,4 +1,4 @@
-name: Recordatorios de pagos recurrentes
+name: Notificaciones diarias (pagos recurrentes y presupuestos)
 
 on:
   schedule:
@@ -9,8 +9,13 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Disparar chequeo de recordatorios
+      - name: Disparar chequeo de pagos recurrentes
         run: |
           curl --fail --show-error --max-time 90 --retry 3 --retry-delay 20 --retry-all-errors \
             -X POST "https://misfinanzas-api.onrender.com/api/recurring-payments-notifications/run" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+      - name: Disparar chequeo de alertas de presupuesto
+        run: |
+          curl --fail --show-error --max-time 90 --retry 3 --retry-delay 20 --retry-all-errors \
+            -X POST "https://misfinanzas-api.onrender.com/api/budgets-alerts/run" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
