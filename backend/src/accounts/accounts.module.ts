@@ -7,5 +7,6 @@ import { AccountsService } from './accounts.service.js';
   imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
   controllers: [AccountsController],
   providers: [AccountsService],
+  exports: [AccountsService],
 })
 export class AccountsModule {}

@@ -1,4 +1,4 @@
-name: Notificaciones diarias (pagos recurrentes y presupuestos)
+name: Notificaciones diarias (pagos recurrentes, presupuestos y resumen mensual)
 
 on:
   schedule:
@@ -18,4 +18,9 @@ jobs:
         run: |
           curl --fail --show-error --max-time 90 --retry 3 --retry-delay 20 --retry-all-errors \
             -X POST "https://misfinanzas-api.onrender.com/api/budgets-alerts/run" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+      - name: Disparar resumen mensual
+        run: |
+          curl --fail --show-error --max-time 90 --retry 3 --retry-delay 20 --retry-all-errors \
+            -X POST "https://misfinanzas-api.onrender.com/api/reports-monthly-summary/run" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

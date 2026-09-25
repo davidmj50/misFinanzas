@@ -24,13 +24,14 @@ enum UserRole {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String
-  name         String
-  role         UserRole      @default(USER)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                     String        @id @default(uuid())
+  email                  String        @unique
+  passwordHash           String
+  name                   String
+  role                   UserRole      @default(USER)
+  lastMonthlySummaryFor  DateTime?     @db.Date
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
   accounts          Account[]
   categories        Category[]
   transactions      Transaction[]
