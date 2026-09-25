@@ -1,0 +1,16 @@
+name: Deploy backend (Render)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar deploy en Render
+        run: |
+          curl --fail --show-error --request POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
