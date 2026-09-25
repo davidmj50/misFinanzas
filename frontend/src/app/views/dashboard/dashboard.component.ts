@@ -21,6 +21,7 @@ import { SavingsGoalsService } from '../../core/services/savings-goals.service';
 import { TransactionSummary, Account } from '../../core/models/finance.models';
 import { Budget } from '../../core/models/budget.models';
 import { SavingsGoal } from '../../core/models/savings-goal.models';
+import { localDateString } from '../../core/utils/dates';
 
 @Component({
   selector: 'app-dashboard',
@@ -59,7 +60,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loading.set(true);
     const now = new Date();
-    const dateFrom = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().slice(0, 10);
+    const dateFrom = localDateString(new Date(now.getFullYear(), now.getMonth() - 11, 1));
 
     this.transactionsService.summary(dateFrom).subscribe({
       next: (summary) => {

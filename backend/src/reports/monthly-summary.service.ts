@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { dateKey, monthRange } from '../common/dates.js';
 import { EmailService } from '../email/email.service.js';
 import { AccountsService } from '../accounts/accounts.service.js';
 
@@ -14,11 +15,9 @@ export class MonthlySummaryService {
   ) {}
 
   async run() {
-    const now = new Date();
-    const targetStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const targetEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthKey = targetStart.toISOString().slice(0, 10);
-    const monthLabel = targetStart.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+    const { start: targetStart, end: targetEnd } = monthRange(-1);
+    const monthKey = dateKey(targetStart);
+    const monthLabel = targetStart.toLocaleDateString('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
     const users = await this.prisma.user.findMany();
     if (users.length === 0) return { checked: 0, sent: 0 };

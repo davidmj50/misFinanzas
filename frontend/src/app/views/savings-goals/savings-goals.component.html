@@ -59,7 +59,7 @@
                 <tbody>
                   @for (contribution of goal.contributions; track contribution.id) {
                     <tr>
-                      <td>{{ contribution.date | date: 'yyyy-MM-dd' }}</td>
+                      <td>{{ contribution.date | date: 'yyyy-MM-dd' : 'UTC' }}</td>
                       <td>{{ contribution.note || '-' }}</td>
                       <td class="text-end">{{ contribution.amount | number: '1.0-2' }}</td>
                       <td class="text-end">

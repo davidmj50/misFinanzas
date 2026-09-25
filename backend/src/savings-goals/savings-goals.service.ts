@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { daysBetween, today } from '../common/dates.js';
 import { CreateSavingsGoalDto } from './dto/create-savings-goal.dto.js';
 import { UpdateSavingsGoalDto } from './dto/update-savings-goal.dto.js';
 import { CreateContributionDto } from './dto/create-contribution.dto.js';
@@ -81,9 +82,7 @@ export class SavingsGoalsService {
     let daysRemaining: number | null = null;
     let suggestedMonthly: number | null = null;
     if (goal.targetDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      daysRemaining = Math.ceil((goal.targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      daysRemaining = daysBetween(today(), goal.targetDate);
       const monthsRemaining = Math.max(daysRemaining / 30, 1 / 30);
       suggestedMonthly = remaining > 0 ? remaining / monthsRemaining : 0;
     }
