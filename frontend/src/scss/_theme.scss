@@ -1,8 +1,47 @@
 @use "@coreui/coreui/scss/mixins/transition" as *;
 @use "@coreui/coreui/scss/mixins/color-mode" as *;
 
+// Design tokens — light mode (neutral, minimalist palette)
+// NOTE: --cui-card-bg / --cui-modal-bg / --cui-sidebar-* are re-declared
+// locally by CoreUI on .card / .modal / .sidebar themselves (referencing
+// --cui-body-bg), so overriding them at :root has no effect — they must be
+// set on those same selectors to actually take precedence.
+:root {
+  --cui-body-bg: #f8f9fb;
+  --cui-border-color: #e9ebef;
+  --cui-border-color-translucent: #e9ebef;
+}
+
 body {
-  background-color: var(--cui-tertiary-bg);
+  background-color: var(--cui-body-bg);
+}
+
+.card {
+  --cui-card-bg: #ffffff;
+}
+
+.modal {
+  --cui-modal-bg: #ffffff;
+}
+
+.sidebar {
+  --cui-sidebar-bg: #ffffff;
+  --cui-sidebar-border-color: var(--cui-border-color);
+  --cui-sidebar-brand-bg: transparent;
+  --cui-sidebar-nav-link-hover-bg: #f1f4fb;
+  --cui-sidebar-nav-link-hover-color: var(--cui-body-color);
+  --cui-sidebar-nav-link-hover-icon-color: var(--cui-body-color);
+  --cui-sidebar-nav-link-active-bg: #eaf1fd;
+  --cui-sidebar-nav-link-active-color: var(--cui-primary);
+  --cui-sidebar-nav-link-active-icon-color: var(--cui-primary);
+  box-shadow: none;
+}
+
+.sidebar-brand {
+  font-weight: 600;
+  font-size: 1.125rem;
+  letter-spacing: -.01em;
+  color: var(--cui-primary);
 }
 
 .wrapper {
@@ -54,11 +93,28 @@ body {
 }
 
 @include color-mode(dark) {
-  body {
-    background-color: var(--cui-dark-bg-subtle);
-  }
+  --cui-body-bg: var(--cui-dark-bg-subtle);
+  --cui-border-color: #2c3341;
+  --cui-border-color-translucent: #2c3341;
 
   .footer {
     --cui-footer-bg: var(--cui-body-bg);
+  }
+
+  .card {
+    --cui-card-bg: var(--cui-tertiary-bg);
+  }
+
+  .modal {
+    --cui-modal-bg: var(--cui-tertiary-bg);
+  }
+
+  .sidebar {
+    --cui-sidebar-bg: var(--cui-tertiary-bg);
+    --cui-sidebar-border-color: #2c3341;
+    --cui-sidebar-nav-link-hover-bg: rgba(255, 255, 255, .06);
+    --cui-sidebar-nav-link-active-bg: rgba(37, 99, 235, .16);
+    --cui-sidebar-nav-link-active-color: #7aa5f5;
+    --cui-sidebar-nav-link-active-icon-color: #7aa5f5;
   }
 }

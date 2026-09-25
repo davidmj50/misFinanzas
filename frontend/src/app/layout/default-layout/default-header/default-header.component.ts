@@ -40,7 +40,6 @@ import {
   ModalComponent,
   ModalHeaderComponent,
   ModalTitleDirective,
-  NavLinkDirective,
   SearchButtonComponent,
   SidebarToggleDirective
 } from '@coreui/angular';
@@ -72,7 +71,6 @@ import { AuthService } from '../../../core/services/auth.service';
     ModalComponent,
     ModalHeaderComponent,
     ModalTitleDirective,
-    NavLinkDirective,
     NgTemplateOutlet,
     SearchButtonComponent,
     SidebarToggleDirective

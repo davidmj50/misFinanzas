@@ -6,6 +6,35 @@
 // custom tweaks for scrollbar styling (wip)
 @use "scrollbar";
 
+// Minimalist design refinements
+.card {
+  box-shadow: var(--cui-box-shadow-sm);
+}
+
+.table {
+  --cui-table-color: var(--cui-body-color);
+
+  > thead {
+    background-color: var(--cui-tertiary-bg);
+
+    > tr > th {
+      color: var(--cui-secondary-color);
+      font-size: .8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+  }
+}
+
+.modal-content {
+  box-shadow: var(--cui-box-shadow);
+}
+
+.progress {
+  --cui-progress-height: .5rem;
+}
+
  // custom calendar today cell color
 .calendar-cell.today {
   --cui-calendar-cell-today-color: var(--cui-info) !important;
