@@ -61,7 +61,15 @@
     <c-card class="mb-4">
       <c-card-header class="d-flex justify-content-between align-items-center">
         <strong>Transacciones ({{ total() }})</strong>
-        <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="accounts().length === 0">+ Nueva transacción</button>
+        <div class="d-flex gap-2">
+          <button cButton color="secondary" size="sm" variant="outline" [disabled]="total() === 0 || exporting()" (click)="exportExcel()">
+            {{ exporting() === 'excel' ? 'Exportando...' : 'Exportar Excel' }}
+          </button>
+          <button cButton color="secondary" size="sm" variant="outline" [disabled]="total() === 0 || exporting()" (click)="exportPdf()">
+            {{ exporting() === 'pdf' ? 'Exportando...' : 'Exportar PDF' }}
+          </button>
+          <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="accounts().length === 0">+ Nueva transacción</button>
+        </div>
       </c-card-header>
       <c-card-body>
         @if (accounts().length === 0) {
@@ -70,7 +78,7 @@
         @if (errorMessage()) {
           <c-alert color="danger">{{ errorMessage() }}</c-alert>
         }
-        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 border">
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0">
           <thead>
             <tr>
               <th>Fecha</th>

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import {
   AlertComponent,
   BadgeComponent,
@@ -28,6 +29,7 @@ import { AccountsService } from '../../core/services/accounts.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { TransactionsService } from '../../core/services/transactions.service';
 import { Account, Category, Transaction, TransactionType } from '../../core/models/finance.models';
+import { exportTransactionsToExcel, exportTransactionsToPdf } from '../../core/utils/transactions-export';
 
 @Component({
   selector: 'app-transactions',
@@ -70,6 +72,7 @@ export class TransactionsComponent implements OnInit {
   readonly page = signal(1);
   readonly totalPages = signal(1);
   readonly total = signal(0);
+  readonly exporting = signal<'excel' | 'pdf' | null>(null);
 
   readonly filterForm = this.fb.nonNullable.group({
     accountId: [''],
@@ -231,6 +234,56 @@ export class TransactionsComponent implements OnInit {
     this.transactionsService.remove(transaction.id).subscribe({
       next: () => this.load(),
       error: () => this.errorMessage.set('No se pudo eliminar la transacción.'),
+    });
+  }
+
+  private fetchAllFiltered(): Observable<Transaction[]> {
+    const filters = this.filterForm.getRawValue();
+    const baseQuery = {
+      accountId: filters.accountId || undefined,
+      categoryId: filters.categoryId || undefined,
+      type: (filters.type || undefined) as TransactionType | undefined,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      search: filters.search || undefined,
+    };
+    const pageSize = 200;
+
+    return this.transactionsService.list({ ...baseQuery, page: 1, pageSize }).pipe(
+      switchMap((first) => {
+        if (first.totalPages <= 1) return of(first.items);
+        const remainingPages = Array.from({ length: first.totalPages - 1 }, (_, i) => i + 2);
+        const requests = remainingPages.map((page) => this.transactionsService.list({ ...baseQuery, page, pageSize }));
+        return forkJoin(requests).pipe(map((results) => [first.items, ...results.map((r) => r.items)].flat()));
+      }),
+    );
+  }
+
+  exportExcel() {
+    this.exporting.set('excel');
+    this.fetchAllFiltered().subscribe({
+      next: async (items) => {
+        await exportTransactionsToExcel(items, `transacciones_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        this.exporting.set(null);
+      },
+      error: () => {
+        this.errorMessage.set('No se pudo exportar a Excel.');
+        this.exporting.set(null);
+      },
+    });
+  }
+
+  exportPdf() {
+    this.exporting.set('pdf');
+    this.fetchAllFiltered().subscribe({
+      next: (items) => {
+        exportTransactionsToPdf(items, `transacciones_${new Date().toISOString().slice(0, 10)}.pdf`);
+        this.exporting.set(null);
+      },
+      error: () => {
+        this.errorMessage.set('No se pudo exportar a PDF.');
+        this.exporting.set(null);
+      },
     });
   }
 }
