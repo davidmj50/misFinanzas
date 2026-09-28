@@ -1,0 +1,55 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong>Calendario de vencimientos</strong>
+        <div class="d-flex align-items-center gap-2">
+          <button cButton color="secondary" size="sm" variant="outline" (click)="prevMonth()">‹</button>
+          <span class="fw-semibold calendar-month-label">{{ monthLabel() }}</span>
+          <button cButton color="secondary" size="sm" variant="outline" (click)="nextMonth()">›</button>
+          <button cButton color="secondary" size="sm" variant="outline" (click)="goToday()">Hoy</button>
+        </div>
+      </c-card-header>
+      <c-card-body>
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+
+        <div class="calendar-weekdays">
+          @for (wd of weekdays; track wd) {
+            <div class="calendar-weekday">{{ wd }}</div>
+          }
+        </div>
+
+        <div class="calendar-grid">
+          @for (cell of calendarCells(); track $index) {
+            <div class="calendar-cell" [class.is-today]="cell.isToday" [class.is-empty]="cell.day === null">
+              @if (cell.day !== null) {
+                <div class="calendar-day-number">{{ cell.day }}</div>
+                @for (ev of cell.events; track ev.label) {
+                  <div class="calendar-event" [class.calendar-event-payment]="ev.type === 'payment'" [class.calendar-event-goal]="ev.type === 'goal'">
+                    {{ ev.label }}
+                    @if (ev.amount !== undefined) {
+                      <span class="calendar-event-amount">{{ ev.amount | number: '1.0-0' }}</span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+
+        @if (!loading() && recurringPayments().length === 0 && savingsGoals().length === 0) {
+          <p class="text-body-secondary text-center py-3 mb-0">
+            No tienes pagos recurrentes activos ni metas de ahorro con fecha objetivo.
+          </p>
+        }
+
+        <div class="calendar-legend">
+          <span class="legend-item"><span class="legend-dot legend-dot-payment"></span> Pago recurrente</span>
+          <span class="legend-item"><span class="legend-dot legend-dot-goal"></span> Meta de ahorro</span>
+        </div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

@@ -1,0 +1,97 @@
+.calendar-month-label {
+  min-width: 150px;
+  text-align: center;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cui-secondary-color);
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+
+.calendar-cell {
+  min-height: 84px;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+.calendar-cell.is-empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.calendar-cell.is-today {
+  border-color: var(--cui-primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.calendar-day-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.calendar-event {
+  font-size: 0.6875rem;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event-payment {
+  background: rgba(249, 177, 21, 0.18);
+  color: var(--cui-warning);
+}
+
+.calendar-event-goal {
+  background: rgba(51, 153, 255, 0.18);
+  color: var(--cui-info);
+}
+
+.calendar-event-amount {
+  float: right;
+  font-weight: 600;
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--cui-secondary-color);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.legend-dot-payment {
+  background: var(--cui-warning);
+}
+
+.legend-dot-goal {
+  background: var(--cui-info);
+}
