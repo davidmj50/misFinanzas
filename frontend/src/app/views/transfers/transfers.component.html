@@ -1,0 +1,108 @@
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex justify-content-between align-items-center">
+        <strong>Transferencias entre cuentas</strong>
+        <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="activeAccounts().length < 2">
+          + Nueva transferencia
+        </button>
+      </c-card-header>
+      <c-card-body>
+        <p class="text-body-secondary small">
+          Usa una transferencia para mover dinero entre tus cuentas, por ejemplo al pagar la tarjeta de crédito desde el
+          banco. Cambia el saldo de ambas cuentas pero no cuenta como ingreso ni como gasto.
+        </p>
+
+        @if (errorMessage()) {
+          <c-alert color="danger">{{ errorMessage() }}</c-alert>
+        }
+        @if (activeAccounts().length < 2 && !loading()) {
+          <c-alert color="warning">Necesitas al menos dos cuentas activas para hacer una transferencia.</c-alert>
+        }
+
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Desde</th>
+              <th>Hacia</th>
+              <th>Descripción</th>
+              <th class="text-end">Monto</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (transfer of transfers(); track transfer.id) {
+              <tr>
+                <td>{{ transfer.date.slice(0, 10) }}</td>
+                <td>{{ transfer.fromAccount.name }}</td>
+                <td>{{ transfer.toAccount.name }}</td>
+                <td>{{ transfer.description || '—' }}</td>
+                <td class="text-end">{{ transfer.amount | number: '1.0-2' }} {{ transfer.fromAccount.currency }}</td>
+                <td class="text-end">
+                  <button cButton color="danger" size="sm" variant="outline" (click)="remove(transfer)">Eliminar</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="text-center text-body-secondary py-4">
+                  {{ loading() ? 'Cargando...' : 'Aún no tienes transferencias.' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<c-modal [(visible)]="modalVisible">
+  <c-modal-header>
+    <h5 cModalTitle>Nueva transferencia</h5>
+    <button (click)="modalVisible.set(false)" cButtonClose></button>
+  </c-modal-header>
+  <form cForm [formGroup]="form" (ngSubmit)="save()">
+    <c-modal-body>
+      @if (formError()) {
+        <c-alert color="danger">{{ formError() }}</c-alert>
+      }
+      <c-row class="gy-3">
+        <c-col xs="12" md="6">
+          <label cLabel for="fromAccountId">Desde</label>
+          <select cSelect formControlName="fromAccountId" id="fromAccountId">
+            <option value="" disabled>Cuenta de origen</option>
+            @for (account of activeAccounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }} ({{ account.balance | number: '1.0-2' }} {{ account.currency }})</option>
+            }
+          </select>
+        </c-col>
+        <c-col xs="12" md="6">
+          <label cLabel for="toAccountId">Hacia</label>
+          <select cSelect formControlName="toAccountId" id="toAccountId">
+            <option value="" disabled>Cuenta de destino</option>
+            @for (account of activeAccounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }} ({{ account.balance | number: '1.0-2' }} {{ account.currency }})</option>
+            }
+          </select>
+        </c-col>
+        <c-col xs="12" md="6">
+          <label cLabel for="amount">Monto</label>
+          <input cFormControl formControlName="amount" id="amount" min="0.01" step="0.01" type="number" />
+        </c-col>
+        <c-col xs="12" md="6">
+          <label cLabel for="date">Fecha</label>
+          <input cFormControl formControlName="date" id="date" type="date" />
+        </c-col>
+        <c-col xs="12">
+          <label cLabel for="description">Descripción (opcional)</label>
+          <input cFormControl formControlName="description" id="description" maxlength="200" placeholder="Ej. Pago tarjeta Visa" />
+        </c-col>
+      </c-row>
+    </c-modal-body>
+    <c-modal-footer>
+      <button (click)="modalVisible.set(false)" cButton color="secondary" type="button">Cancelar</button>
+      <button cButton color="primary" type="submit">Guardar</button>
+    </c-modal-footer>
+  </form>
+</c-modal>

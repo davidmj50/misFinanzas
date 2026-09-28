@@ -36,6 +36,7 @@ model User {
   categories        Category[]
   transactions      Transaction[]
   budgets           Budget[]
+  transfers         Transfer[]
   recurringPayments RecurringPayment[]
   savingsGoals      SavingsGoal[]
 }
@@ -55,6 +56,8 @@ model Account {
   updatedAt      DateTime      @updatedAt
   transactions   Transaction[]
   recurringPayments RecurringPayment[]
+  transfersOut   Transfer[]    @relation("TransferFrom")
+  transfersIn    Transfer[]    @relation("TransferTo")
 
   @@index([userId])
 }
@@ -168,4 +171,25 @@ model SavingsContribution {
   createdAt DateTime    @default(now())
 
   @@index([goalId])
+}
+
+// Movimiento de dinero entre dos cuentas del mismo usuario (p. ej. pagar la tarjeta
+// desde el banco). Cambia los saldos pero no cuenta como ingreso ni gasto.
+model Transfer {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  fromAccount   Account  @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  fromAccountId String
+  toAccount     Account  @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  toAccountId   String
+  amount        Decimal  @db.Decimal(14, 2)
+  date          DateTime
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([fromAccountId])
+  @@index([toAccountId])
 }

@@ -12,6 +12,11 @@ export const navItems: INavData[] = [
     iconComponent: { name: 'cil-list' }
   },
   {
+    name: 'Transferencias',
+    url: '/transfers',
+    iconComponent: { name: 'cil-swap-horizontal' }
+  },
+  {
     name: 'Cuentas',
     url: '/accounts',
     iconComponent: { name: 'cil-credit-card' }
