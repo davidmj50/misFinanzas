@@ -89,6 +89,7 @@ import {
   cilSpreadsheet,
   cilStar,
   cilSun,
+  cilSwapHorizontal,
   cilTags,
   cilTask,
   cilTrash,
@@ -100,14 +101,6 @@ import {
   cilWallet
 } from '@coreui/icons';
 
-import { apple } from './apple';
-import { chatgpt } from './chatgpt';
-import { eye } from './eye';
-import { google } from './google';
-import { linkedinBadge } from './linkedin-badge';
-import { twitterX } from './twitter-x';
-import { logo } from './logo';
-import { signet } from './signet';
 
 export const iconSubset = {
   cibCcAmex,
@@ -200,6 +193,7 @@ export const iconSubset = {
   cilSpreadsheet,
   cilStar,
   cilSun,
+  cilSwapHorizontal,
   cilTags,
   cilTask,
   cilTrash,
@@ -208,15 +202,7 @@ export const iconSubset = {
   cilUserFemale,
   cilUserFollow,
   cilUserUnfollow,
-  cilWallet,
-  apple,
-  chatgpt,
-  eye,
-  google,
-  linkedinBadge,
-  logo,
-  signet,
-  twitterX
+  cilWallet
 };
 
 export enum IconSubset {
@@ -310,6 +296,7 @@ export enum IconSubset {
   cilSpreadsheet = 'cilSpreadsheet',
   cilStar = 'cilStar',
   cilSun = 'cilSun',
+  cilSwapHorizontal = 'cilSwapHorizontal',
   cilTags = 'cilTags',
   cilTask = 'cilTask',
   cilTrash = 'cilTrash',
@@ -318,14 +305,6 @@ export enum IconSubset {
   cilUserFemale = 'cilUserFemale',
   cilUserFollow = 'cilUserFollow',
   cilUserUnfollow = 'cilUserUnfollow',
-  cilWallet = 'cilWallet',
-  apple = 'apple',
-  chatgpt = 'chatgpt',
-  eye = 'eye',
-  google = 'google',
-  linkedinBadge = 'linkedinBadge',
-  logo = 'logo',
-  signet = 'signet',
-  twitterX = 'twitterX'
+  cilWallet = 'cilWallet'
 }
 

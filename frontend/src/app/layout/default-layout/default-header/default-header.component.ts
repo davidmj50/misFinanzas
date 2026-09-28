@@ -4,9 +4,6 @@
  * Main application header with navigation, theme switcher, and user menu.
  * Features include:
  * - Sidebar toggle button
- * - Search button with keyboard shortcut and recent searches modal
- * - Primary navigation links
- * - Notification and action icons
  * - Theme switcher (light/dark/auto)
  * - User dropdown menu
  * - Breadcrumb navigation
@@ -16,11 +13,10 @@
  */
 
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 
 import {
   AvatarComponent,
-  BadgeComponent,
   BreadcrumbRouterComponent,
   ColorModeService,
   ContainerComponent,
@@ -30,17 +26,9 @@ import {
   DropdownItemDirective,
   DropdownMenuDirective,
   DropdownToggleDirective,
-  FormControlDirective,
   HeaderComponent,
   HeaderNavComponent,
   HeaderTogglerDirective,
-  ListGroupDirective,
-  ListGroupItemDirective,
-  ModalBodyComponent,
-  ModalComponent,
-  ModalHeaderComponent,
-  ModalTitleDirective,
-  SearchButtonComponent,
   SidebarToggleDirective
 } from '@coreui/angular';
 
@@ -52,7 +40,6 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './default-header.component.html',
   imports: [
     AvatarComponent,
-    BadgeComponent,
     BreadcrumbRouterComponent,
     ContainerComponent,
     DropdownComponent,
@@ -61,18 +48,10 @@ import { AuthService } from '../../../core/services/auth.service';
     DropdownItemDirective,
     DropdownMenuDirective,
     DropdownToggleDirective,
-    FormControlDirective,
     HeaderNavComponent,
     HeaderTogglerDirective,
     IconDirective,
-    ListGroupDirective,
-    ListGroupItemDirective,
-    ModalBodyComponent,
-    ModalComponent,
-    ModalHeaderComponent,
-    ModalTitleDirective,
     NgTemplateOutlet,
-    SearchButtonComponent,
     SidebarToggleDirective
   ]
 })
@@ -82,11 +61,16 @@ export class DefaultHeaderComponent extends HeaderComponent {
   readonly colorMode = this.#colorModeService.colorMode;
   readonly #authService = inject(AuthService);
   readonly currentUser = this.#authService.currentUser;
+  readonly initials = computed(() => {
+    const name = this.currentUser()?.name?.trim() ?? '';
+    const parts = name.split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
+  });
 
   readonly colorModes = [
-    { name: 'light', text: 'Light', icon: 'cilSun' },
-    { name: 'dark', text: 'Dark', icon: 'cilMoon' },
-    { name: 'auto', text: 'Auto', icon: 'cilContrast' }
+    { name: 'light', text: 'Claro', icon: 'cilSun' },
+    { name: 'dark', text: 'Oscuro', icon: 'cilMoon' },
+    { name: 'auto', text: 'Automático', icon: 'cilContrast' }
   ];
 
   readonly icons = computed(() => {
@@ -99,8 +83,6 @@ export class DefaultHeaderComponent extends HeaderComponent {
   }
 
   readonly sidebarId = input('sidebar1');
-
-  readonly searchVisible = signal(false);
 
   logout(): void {
     this.#authService.logout();

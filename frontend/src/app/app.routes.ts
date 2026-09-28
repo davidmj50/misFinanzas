@@ -20,6 +20,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes)
       },
       {
+        path: 'transfers',
+        loadChildren: () => import('./views/transfers/routes').then((m) => m.routes)
+      },
+      {
         path: 'accounts',
         loadChildren: () => import('./views/accounts/routes').then((m) => m.routes)
       },
@@ -46,26 +50,6 @@ export const routes: Routes = [
       {
         path: 'users',
         loadChildren: () => import('./views/users/routes').then((m) => m.routes)
-      },
-      {
-        path: 'components',
-        loadChildren: () => import('./views/components/routes').then((m) => m.routes)
-      },
-      {
-        path: 'forms',
-        loadChildren: () => import('./views/forms/routes').then((m) => m.routes)
-      },
-      {
-        path: 'icons',
-        loadChildren: () => import('./views/icons/routes').then((m) => m.routes)
-      },
-      {
-        path: 'widgets',
-        loadChildren: () => import('./views/widgets/routes').then((m) => m.routes)
-      },
-      {
-        path: 'charts',
-        loadChildren: () => import('./views/charts/routes').then((m) => m.routes)
       }
     ]
   },

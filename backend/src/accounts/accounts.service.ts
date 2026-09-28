@@ -21,15 +21,33 @@ export class AccountsService {
     });
     if (accounts.length === 0) return [];
 
-    const totals = await this.prisma.transaction.groupBy({
-      by: ['accountId', 'type'],
-      where: { userId, accountId: { in: accounts.map((a) => a.id) } },
-      _sum: { amount: true },
-    });
+    const accountIds = accounts.map((a) => a.id);
+    const [totals, transfersOut, transfersIn] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ['accountId', 'type'],
+        where: { userId, accountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.transfer.groupBy({
+        by: ['fromAccountId'],
+        where: { userId, fromAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.transfer.groupBy({
+        by: ['toAccountId'],
+        where: { userId, toAccountId: { in: accountIds } },
+        _sum: { amount: true },
+      }),
+    ]);
+    const outMap = new Map(transfersOut.map((t) => [t.fromAccountId, Number(t._sum.amount ?? 0)]));
+    const inMap = new Map(transfersIn.map((t) => [t.toAccountId, Number(t._sum.amount ?? 0)]));
 
     return accounts.map((account) => ({
       ...account,
-      balance: this.computeBalance(account.initialBalance, account.id, totals),
+      balance:
+        this.computeBalance(account.initialBalance, account.id, totals) +
+        (inMap.get(account.id) ?? 0) -
+        (outMap.get(account.id) ?? 0),
     }));
   }
 
@@ -53,17 +71,27 @@ export class AccountsService {
   async getBalanceHistory(userId: string, id: string) {
     const account = await this.findOne(userId, id);
 
-    const transactions = await this.prisma.transaction.findMany({
-      where: { userId, accountId: id },
-      select: { amount: true, type: true, date: true },
-      orderBy: { date: 'asc' },
-    });
+    const [transactions, transfers] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: { userId, accountId: id },
+        select: { amount: true, type: true, date: true },
+      }),
+      this.prisma.transfer.findMany({
+        where: { userId, OR: [{ fromAccountId: id }, { toAccountId: id }] },
+        select: { amount: true, fromAccountId: true, date: true },
+      }),
+    ]);
 
     const byMonth = new Map<string, number>();
-    for (const t of transactions) {
-      const key = monthKey(t.date);
-      const signedAmount = t.type === 'INCOME' ? Number(t.amount) : -Number(t.amount);
+    const add = (date: Date, signedAmount: number) => {
+      const key = monthKey(date);
       byMonth.set(key, (byMonth.get(key) ?? 0) + signedAmount);
+    };
+    for (const t of transactions) {
+      add(t.date, t.type === 'INCOME' ? Number(t.amount) : -Number(t.amount));
+    }
+    for (const t of transfers) {
+      add(t.date, t.fromAccountId === id ? -Number(t.amount) : Number(t.amount));
     }
 
     const months = Array.from(byMonth.keys()).sort();
