@@ -11,6 +11,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Backend (lint, tests, build, migraciones)
@@ -39,6 +42,12 @@ jobs:
       SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/shadow
       JWT_SECRET: ci-jwt-secret
       CRON_SECRET: ci-cron-secret
+      RUN_TRANSFER_DB_TESTS: "true"
+      RUN_IMPORT_DB_TESTS: "true"
+      RUN_RULE_DB_TESTS: "true"
+      RUN_PLANNING_DB_TESTS: "true"
+      RUN_DOCUMENT_DB_TESTS: "true"
+      RUN_QUICK_ENTRY_DB_TESTS: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -110,3 +119,22 @@ jobs:
 
       - name: Build de producción
         run: npx ng build --configuration production
+
+      - name: Verificar aplicación instalable
+        run: npm run verify:pwa
+
+  deploy-backend:
+    name: Desplegar backend verificado
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/deploy-backend.yml
+    secrets:
+      RENDER_DEPLOY_HOOK_BACKEND: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+
+  deploy-frontend:
+    name: Desplegar frontend verificado
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/deploy-frontend.yml
+    secrets:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}

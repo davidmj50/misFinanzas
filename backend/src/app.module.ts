@@ -1,3 +1,7 @@
+import { QuickEntriesModule } from './quick-entries/quick-entries.module.js';
+import { ExpenseDocumentsModule } from './expense-documents/expense-documents.module.js';
+import { PlanningModule } from './planning/planning.module.js';
+import { CategorizationRulesModule } from './categorization-rules/categorization-rules.module.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -14,6 +18,8 @@ import { BudgetsModule } from './budgets/budgets.module.js';
 import { RecurringPaymentsModule } from './recurring-payments/recurring-payments.module.js';
 import { SavingsGoalsModule } from './savings-goals/savings-goals.module.js';
 import { ReportsModule } from './reports/reports.module.js';
+import { TransfersModule } from './transfers/transfers.module.js';
+import { ImportsModule } from './imports/imports.module.js';
 
 @Module({
   imports: [
@@ -29,6 +35,12 @@ import { ReportsModule } from './reports/reports.module.js';
     RecurringPaymentsModule,
     SavingsGoalsModule,
     ReportsModule,
+    TransfersModule,
+    ImportsModule,
+    QuickEntriesModule,
+    ExpenseDocumentsModule,
+    PlanningModule,
+    CategorizationRulesModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

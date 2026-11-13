@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    { "name": "app", "installMode": "prefetch", "resources": { "files": ["/index.html", "/*.css", "/*.js", "/manifest.webmanifest", "/assets/pwa/**", "/favicon.ico"] } },
+    { "name": "public-images", "installMode": "lazy", "updateMode": "lazy", "resources": { "files": ["/assets/images/**", "/assets/brand/**"] } }
+  ],
+  "dataGroups": [],
+  "navigationUrls": ["/**", "!/**/*.*", "!/**/*__*", "!/**/*__*/**", "!/api/**"],
+  "navigationRequestStrategy": "performance"
+}

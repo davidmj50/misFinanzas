@@ -1,9 +1,16 @@
+<div class="d-flex align-items-center gap-2 mb-3">
+  <label for="summaryCurrency">Moneda del resumen</label>
+  <select cSelect id="summaryCurrency" class="w-auto" [value]="currency()" (change)="currency.set($any($event.target).value)">
+    @for (code of currencies(); track code) { <option [value]="code">{{ code }}</option> }
+  </select>
+</div>
+@if (errorMessage()) { <p role="alert" class="text-danger">{{ errorMessage() }}</p> }
 <c-row class="mb-4">
   <c-col md="4">
     <c-card class="text-center">
       <c-card-body>
         <div class="text-body-secondary">Ingresos (últimos 12 meses)</div>
-        <div class="fs-4 fw-semibold text-success">{{ summary()?.totalIncome ?? 0 | number: '1.0-2' }}</div>
+        <div class="fs-4 fw-semibold text-success">{{ summary()?.totalIncome ?? 0 | number: '1.0-2' }} {{ currency() }}</div>
       </c-card-body>
     </c-card>
   </c-col>
@@ -11,7 +18,7 @@
     <c-card class="text-center">
       <c-card-body>
         <div class="text-body-secondary">Gastos (últimos 12 meses)</div>
-        <div class="fs-4 fw-semibold text-danger">{{ summary()?.totalExpense ?? 0 | number: '1.0-2' }}</div>
+        <div class="fs-4 fw-semibold text-danger">{{ summary()?.totalExpense ?? 0 | number: '1.0-2' }} {{ currency() }}</div>
       </c-card-body>
     </c-card>
   </c-col>
@@ -20,7 +27,7 @@
       <c-card-body>
         <div class="text-body-secondary">Balance</div>
         <div class="fs-4 fw-semibold" [class.text-success]="balance >= 0" [class.text-danger]="balance < 0">
-          {{ balance | number: '1.0-2' }}
+          {{ balance | number: '1.0-2' }} {{ currency() }}
         </div>
       </c-card-body>
     </c-card>
@@ -42,7 +49,7 @@
               <div class="text-body-secondary small">{{ account.institution || account.type }}</div>
             </div>
             <div class="fw-semibold" [class.text-success]="(account.balance ?? 0) >= 0" [class.text-danger]="(account.balance ?? 0) < 0">
-              {{ account.balance ?? 0 | number: '1.0-2' }}
+              {{ account.balance ?? 0 | number: '1.0-2' }} {{ account.currency }}
             </div>
           </div>
         } @empty {
@@ -56,7 +63,7 @@
   <c-col lg="4">
     <c-card class="h-100">
       <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Presupuestos del mes</strong>
+        <strong>Presupuestos del mes (COP)</strong>
         <a routerLink="/budgets" class="small">Ver todos</a>
       </c-card-header>
       <c-card-body>
@@ -86,7 +93,7 @@
   <c-col lg="4">
     <c-card class="h-100">
       <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Metas de ahorro</strong>
+        <strong>Metas de ahorro (COP)</strong>
         <a routerLink="/savings-goals" class="small">Ver todas</a>
       </c-card-header>
       <c-card-body>
@@ -119,7 +126,7 @@
   <c-col xs="12">
     <c-card>
       <c-card-header>
-        <strong>Ingresos vs. Gastos por mes</strong>
+        <strong>Ingresos vs. Gastos por mes ({{ currency() }})</strong>
       </c-card-header>
       <c-card-body>
         <c-chart [data]="chartData" [height]="300" [options]="chartOptions" type="bar">
@@ -148,7 +155,7 @@
             @for (category of topExpenseCategories; track category.categoryId) {
               <tr>
                 <td><c-badge color="danger">{{ category.categoryName }}</c-badge></td>
-                <td class="text-end">{{ category.total | number: '1.0-2' }}</td>
+                <td class="text-end">{{ category.total | number: '1.0-2' }} {{ currency() }}</td>
               </tr>
             } @empty {
               <tr>

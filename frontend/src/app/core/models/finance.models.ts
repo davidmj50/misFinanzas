@@ -38,7 +38,9 @@ export type CreateCategoryPayload = Pick<Category, 'name' | 'type'> &
   Partial<Pick<Category, 'icon' | 'color' | 'parentId'>>;
 
 export interface Transaction {
+  _count?: { expenseDocuments: number };
   id: string;
+  transferId?: string | null;
   accountId: string;
   categoryId?: string | null;
   type: TransactionType;
@@ -75,7 +77,7 @@ export interface CreateTransactionPayload {
 export interface TransactionQuery {
   accountId?: string;
   categoryId?: string;
-  type?: TransactionType;
+  type?: TransactionType | 'TRANSFER';
   dateFrom?: string;
   dateTo?: string;
   search?: string;
@@ -105,6 +107,7 @@ export interface MonthlyBreakdown {
 }
 
 export interface TransactionSummary {
+  currency: string;
   totalIncome: number;
   totalExpense: number;
   byCategory: CategoryBreakdown[];

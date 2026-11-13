@@ -1,0 +1,28 @@
+<main class="container pwa-shell" style="max-width: 600px">
+  <header class="d-flex justify-content-between gap-3 align-items-center mb-3"><a routerLink="/dashboard" class="text-decoration-none d-flex gap-2 align-items-center"><img src="assets/pwa/icon-192.png" width="40" height="40" class="rounded-3" alt="" /><strong>MisFinanzas</strong></a><a routerLink="/install" class="small">Instalar en el celular</a></header>
+  <h1 class="h4 mb-3">Registro rápido</h1>
+  @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+  @if (catalogError()) { <p class="alert alert-warning" role="alert">{{ catalogError() }}</p> }
+  @if (notice()) { <p class="alert alert-success" role="status">{{ notice() }}</p> }
+  @if (successId()) { <a routerLink="/transactions" class="d-inline-block mb-3">Ver movimiento en Transacciones</a> }
+  @if (!storageAvailable()) { <p class="alert alert-warning">Este navegador no pudo conservar el borrador. Mantén esta pantalla abierta hasta confirmar el guardado.</p> }
+  @if (externalChange()) { <div class="alert alert-warning">El borrador cambió en otra ventana. Recárgalo antes de seguir.<button class="btn btn-outline-dark btn-sm d-block mt-2" [disabled]="saving()" (click)="restore()">Recargar borrador</button></div> }
+  @if (pending()) { <p class="alert alert-info">Envío pendiente de confirmar. Los datos quedan fijos para poder reintentar sin duplicarlo.</p> }
+  <form [formGroup]="form" (ngSubmit)="save()" class="card"><div class="card-body">
+    <fieldset [disabled]="saving() || !!pending() || externalChange()" class="row g-3">
+      <div class="col-12"><label for="quickType" class="form-label">Tipo de movimiento</label><select id="quickType" formControlName="type" class="form-select form-select-lg"><option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option></select></div>
+      <div class="col-12"><label for="quickAmount" class="form-label">Monto {{ form.controls.currency.value ? '(' + form.controls.currency.value + ')' : '' }}</label><input id="quickAmount" formControlName="amount" class="form-control form-control-lg" style="font-size: 2rem" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0,00" autofocus /></div>
+      <div class="col-12"><label for="quickAccount" class="form-label">Cuenta</label><select id="quickAccount" formControlName="accountId" class="form-select" [attr.disabled]="!catalogReady() ? '' : null"><option value="">{{ catalogReady() ? 'Selecciona una cuenta' : 'Disponible al conectar' }}</option>@if (!catalogReady() && form.controls.accountId.value && !accounts().length) { <option [value]="form.controls.accountId.value">Cuenta del borrador (pendiente de validar)</option> }@for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }} ({{ account.currency }})</option> }</select></div>
+      <div class="col-12"><label for="quickCategory" class="form-label">Categoría (opcional)</label><select id="quickCategory" formControlName="categoryId" class="form-select" [attr.disabled]="!catalogReady() ? '' : null"><option value="">Sin categoría</option>@for (category of availableCategories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select></div>
+      <div class="col-12"><label for="quickDate" class="form-label">Fecha</label><input id="quickDate" formControlName="date" class="form-control" type="date" /></div>
+      <div class="col-12"><label for="quickMerchant" class="form-label">Comercio o concepto (opcional)</label><input id="quickMerchant" formControlName="merchant" class="form-control" type="text" maxlength="200" autocomplete="off" placeholder="Ej. supermercado, salario..." /></div>
+      <div class="col-12"><label for="quickDescription" class="form-label">Descripción (opcional)</label><input id="quickDescription" formControlName="description" class="form-control" maxlength="500" /></div>
+    </fieldset>
+    @if (!pending() && currencyMismatch()) { <div class="alert alert-warning mt-3">El monto del borrador estaba en {{ form.controls.currency.value }} y la cuenta usa {{ accountCurrency() }}. Revisa el importe.<button class="btn btn-outline-dark btn-sm d-block mt-2" (click)="confirmCurrency()" type="button">Confirmar monto en {{ accountCurrency() }}</button></div> }
+    <button type="submit" class="btn btn-primary btn-lg w-100 mt-4" [disabled]="!canSave()">{{ saving() ? 'Guardando...' : pending() ? 'Reintentar el mismo envío' : 'Guardar movimiento' }}</button>
+    <p class="small text-body-secondary mt-3 mb-0">{{ pwa.online() ? 'El borrador se conserva en este dispositivo hasta confirmar el guardado.' : 'Puedes completar el borrador sin conexión. Vuelve a abrir esta pantalla y confirma cuando tengas internet.' }}</p>
+  </div></form>
+  <div class="d-flex flex-wrap gap-3 my-3"><button class="btn btn-outline-secondary btn-sm" [disabled]="saving() || !!pending()" (click)="discard()">Descartar borrador</button><button class="btn btn-outline-secondary btn-sm" [disabled]="loading() || !pwa.online() || saving()" (click)="loadCatalog()">{{ loading() ? 'Actualizando...' : 'Actualizar cuentas' }}</button></div>
+  @if (catalogReady() && !accounts().length) { <p class="alert alert-info">Crea una cuenta para registrar movimientos. <a routerLink="/accounts">Ir a Cuentas</a></p> }
+  <nav class="d-flex flex-wrap gap-3 pb-3"><a routerLink="/dashboard">Resumen</a><a routerLink="/transactions">Transacciones</a><a routerLink="/expense-documents">Gasto con comprobante</a></nav>
+</main>

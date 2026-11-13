@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -58,6 +59,7 @@ const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
     ModalHeaderComponent,
     ModalTitleDirective,
     ReactiveFormsModule,
+    RouterLink,
     RowComponent,
     TableDirective,
   ],
@@ -155,7 +157,7 @@ export class AccountsComponent implements OnInit {
     }
     this.accountsService.remove(account.id).subscribe({
       next: () => this.load(),
-      error: () => this.errorMessage.set('No se pudo eliminar la cuenta.'),
+      error: (error) => this.errorMessage.set(typeof error.error?.message === 'string' ? error.error.message : 'No se pudo eliminar la cuenta.'),
     });
   }
 

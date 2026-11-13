@@ -1,3 +1,6 @@
+import { inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { safeReturnUrl } from '../../../core/utils/return-url';
 import { Component, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -37,6 +40,7 @@ import { AuthService } from '../../../core/services/auth.service';
   ],
 })
 export class LoginComponent {
+  private readonly route = inject(ActivatedRoute);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -61,7 +65,7 @@ export class LoginComponent {
     this.errorMessage.set(null);
 
     this.authService.login(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => this.router.navigateByUrl(safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'))),
       error: (err) => {
         this.errorMessage.set(err.error?.message ?? 'No se pudo iniciar sesión. Verifica tus datos.');
         this.loading.set(false);

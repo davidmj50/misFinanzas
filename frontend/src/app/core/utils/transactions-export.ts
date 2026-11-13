@@ -7,11 +7,12 @@ function rowsFor(transactions: Transaction[]) {
   return transactions.map((t) => ({
     date: t.date.slice(0, 10),
     account: t.account?.name ?? '',
-    type: t.type === 'INCOME' ? 'Ingreso' : 'Gasto',
+    type: t.transferId ? (t.type === 'INCOME' ? 'Transferencia (entrada)' : 'Transferencia (salida)') : t.type === 'INCOME' ? 'Ingreso' : 'Gasto',
     category: t.category?.name ?? 'Sin categoría',
     merchant: t.merchant ?? '',
     description: t.description ?? '',
     amount: Number(t.amount),
+    currency: t.currency,
   }));
 }
 
@@ -28,6 +29,7 @@ export async function exportTransactionsToExcel(transactions: Transaction[], fil
       { header: 'Comercio', width: 20, cell: (r) => r.merchant },
       { header: 'Descripción', width: 30, cell: (r) => r.description },
       { header: 'Monto', width: 14, cell: (r) => r.amount },
+      { header: 'Moneda', width: 10, cell: (r) => r.currency },
     ],
   }).toFile(fileName);
 }
@@ -41,7 +43,7 @@ export function exportTransactionsToPdf(transactions: Transaction[], fileName: s
 
   autoTable(doc, {
     startY: 20,
-    head: [['Fecha', 'Cuenta', 'Tipo', 'Categoría', 'Comercio', 'Descripción', 'Monto']],
+    head: [['Fecha', 'Cuenta', 'Tipo', 'Categoría', 'Comercio', 'Descripción', 'Monto', 'Moneda']],
     body: rows.map((r) => [
       r.date,
       r.account,
@@ -50,6 +52,7 @@ export function exportTransactionsToPdf(transactions: Transaction[], fileName: s
       r.merchant,
       r.description,
       r.amount.toLocaleString('es-CO'),
+      r.currency,
     ]),
     styles: { fontSize: 8 },
     headStyles: { fillColor: [50, 31, 219] },

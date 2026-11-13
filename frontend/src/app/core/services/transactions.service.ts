@@ -25,8 +25,9 @@ export class TransactionsService {
     return this.http.get<PaginatedResult<Transaction>>(this.baseUrl, { params });
   }
 
-  summary(dateFrom?: string, dateTo?: string) {
+  summary(dateFrom?: string, dateTo?: string, currency = 'COP') {
     let params = new HttpParams();
+    params = params.set('currency', currency);
     if (dateFrom) params = params.set('dateFrom', dateFrom);
     if (dateTo) params = params.set('dateTo', dateTo);
     return this.http.get<TransactionSummary>(`${this.baseUrl}/summary`, { params });

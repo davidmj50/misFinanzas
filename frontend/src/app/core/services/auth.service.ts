@@ -1,3 +1,6 @@
+import { inject } from '@angular/core';
+import { QuickDraftStore } from './quick-draft.store';
+import { safeReturnUrl } from '../utils/return-url';
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -10,6 +13,7 @@ const USER_KEY = 'misfinanzas_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly drafts = inject(QuickDraftStore);
   private readonly currentUserSignal = signal<AuthUser | null>(this.readStoredUser());
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentUserSignal());
@@ -32,11 +36,13 @@ export class AuthService {
     );
   }
 
-  logout() {
+  logout(clearDrafts = true, returnUrl?: string) {
+    if (clearDrafts) this.drafts.clearAll();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.currentUserSignal.set(null);
-    this.router.navigate(['/authentication/login']);
+    if (returnUrl) this.router.navigate(['/authentication/login'], { queryParams: { returnUrl: safeReturnUrl(returnUrl) } });
+    else this.router.navigate(['/authentication/login']);
   }
 
   getToken(): string | null {
@@ -44,6 +50,7 @@ export class AuthService {
   }
 
   private setSession(response: AuthResponse) {
+    this.drafts.keepOnly(response.user.id);
     localStorage.setItem(TOKEN_KEY, response.accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(response.user));
     this.currentUserSignal.set(response.user);

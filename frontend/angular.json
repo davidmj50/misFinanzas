@@ -42,6 +42,61 @@
                 "glob": "favicon.ico",
                 "input": "src/assets/",
                 "output": "/"
+              },
+              {
+                "glob": "worker.min.js",
+                "input": "node_modules/tesseract.js/dist",
+                "output": "/assets/receipts/ocr/"
+              },
+              {
+                "glob": "tesseract-core*-lstm.wasm.js",
+                "input": "node_modules/tesseract.js-core",
+                "output": "/assets/receipts/ocr/"
+              },
+              {
+                "glob": "*.traineddata.gz",
+                "input": "node_modules/@tesseract.js-data/spa/4.0.0_best_int",
+                "output": "/assets/receipts/languages/"
+              },
+              {
+                "glob": "*.traineddata.gz",
+                "input": "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
+                "output": "/assets/receipts/languages/"
+              },
+              {
+                "glob": "pdf.worker.min.mjs",
+                "input": "node_modules/pdfjs-dist/build",
+                "output": "/assets/receipts/pdf/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/pdfjs-dist/cmaps",
+                "output": "/assets/receipts/pdf/cmaps/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/pdfjs-dist/standard_fonts",
+                "output": "/assets/receipts/pdf/standard_fonts/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/pdfjs-dist/wasm",
+                "output": "/assets/receipts/pdf/wasm/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/pdfjs-dist/iccs",
+                "output": "/assets/receipts/pdf/iccs/"
+              },
+              {
+                "glob": "manifest.webmanifest",
+                "input": "src",
+                "output": "/"
+              },
+              {
+                "glob": "_headers",
+                "input": "src",
+                "output": "/"
               }
             ],
             "styles": [
@@ -75,7 +130,8 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.production.ts"
                 }
-              ]
+              ],
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,

@@ -1,5 +1,5 @@
 import { TransactionType } from '@prisma/client';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Matches, Min } from 'class-validator';
 
 export class CreateTransactionDto {
   @IsUUID()
@@ -18,6 +18,7 @@ export class CreateTransactionDto {
 
   @IsOptional()
   @IsString()
+  @Matches(/^[A-Z]{3}$/)
   currency?: string;
 
   @IsDateString()

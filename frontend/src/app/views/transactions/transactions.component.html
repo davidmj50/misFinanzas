@@ -31,6 +31,7 @@
                 <option value="">Todos</option>
                 <option value="INCOME">Ingreso</option>
                 <option value="EXPENSE">Gasto</option>
+                <option value="TRANSFER">Transferencia</option>
               </select>
             </c-col>
             <c-col md="2">
@@ -61,7 +62,9 @@
     <c-card class="mb-4">
       <c-card-header class="d-flex justify-content-between align-items-center">
         <strong>Transacciones ({{ total() }})</strong>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
+          <a cButton color="secondary" size="sm" variant="outline" routerLink="/expense-documents">Gasto con comprobante</a>
+          <a cButton color="secondary" size="sm" variant="outline" routerLink="/imports">Importar extracto</a>
           <button cButton color="secondary" size="sm" variant="outline" [disabled]="total() === 0 || exporting()" (click)="exportExcel()">
             {{ exporting() === 'excel' ? 'Exportando...' : 'Exportar Excel' }}
           </button>
@@ -103,16 +106,21 @@
                   }
                 </td>
                 <td>
-                  <c-badge [color]="tx.type === 'INCOME' ? 'success' : 'danger'">
-                    {{ tx.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+                  <c-badge [color]="tx.transferId ? 'info' : tx.type === 'INCOME' ? 'success' : 'danger'">
+                    {{ tx.transferId ? (tx.type === 'INCOME' ? 'Transferencia (entrada)' : 'Transferencia (salida)') : tx.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
                   </c-badge>
                 </td>
                 <td class="text-end" [class.text-success]="tx.type === 'INCOME'" [class.text-danger]="tx.type === 'EXPENSE'">
                   {{ tx.type === 'INCOME' ? '+' : '-' }}{{ tx.amount }} {{ tx.currency }}
                 </td>
                 <td class="text-end">
+                  @if (tx.transferId) {
+                    <a cButton color="secondary" size="sm" variant="outline" routerLink="/transfers">Ver transferencias</a>
+                  } @else {
+                  @if (tx.type === 'EXPENSE') { <a cButton color="info" size="sm" variant="outline" class="me-2" routerLink="/expense-documents" [queryParams]="{ transactionId: tx.id }">Comprobantes ({{ tx._count?.expenseDocuments ?? 0 }})</a> }
                   <button cButton color="secondary" size="sm" variant="outline" class="me-2" (click)="openEdit(tx)">Editar</button>
                   <button cButton color="danger" size="sm" variant="outline" (click)="remove(tx)">Eliminar</button>
+                  }
                 </td>
               </tr>
             } @empty {

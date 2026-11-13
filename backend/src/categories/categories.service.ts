@@ -9,7 +9,7 @@ export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateCategoryDto) {
-    if (dto.parentId) await assertCategoryOwned(this.prisma, userId, dto.parentId);
+    if (dto.parentId) await assertCategoryOwned(this.prisma, userId, dto.parentId, dto.type);
     return this.prisma.category.create({ data: { ...dto, userId } });
   }
 
@@ -29,10 +29,26 @@ export class CategoriesService {
   }
 
   async update(userId: string, id: string, dto: UpdateCategoryDto) {
-    await this.findOne(userId, id);
-    if (dto.parentId) {
-      if (dto.parentId === id) throw new BadRequestException('Una categoría no puede ser su propia subcategoría');
-      await assertCategoryOwned(this.prisma, userId, dto.parentId);
+    const current = await this.findOne(userId, id);
+    const type = dto.type ?? current.type;
+    const parentId = dto.parentId === undefined ? current.parentId : dto.parentId;
+    const visited = new Set([id]);
+    let ancestorId = parentId;
+    while (ancestorId) {
+      if (visited.has(ancestorId)) throw new BadRequestException('La categoría padre produciría un ciclo');
+      visited.add(ancestorId);
+      const ancestor = await assertCategoryOwned(this.prisma, userId, ancestorId, type);
+      ancestorId = ancestor.parentId;
+    }
+    if (type !== current.type) {
+      const used = await this.prisma.category.findFirst({
+        where: { id, userId, OR: [
+          { transactions: { some: {} } }, { subcategories: { some: {} } },
+          { categorizationRules: { some: {} } }, { budgets: { some: {} } }, { recurringPayments: { some: {} } },
+        ] },
+        select: { id: true },
+      });
+      if (used) throw new BadRequestException('No puedes cambiar el tipo de una categoría que está en uso');
     }
     return this.prisma.category.update({ where: { id }, data: dto });
   }

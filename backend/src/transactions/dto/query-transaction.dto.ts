@@ -1,6 +1,6 @@
-import { TransactionType } from '@prisma/client';
+import type { TransactionType } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class QueryTransactionDto {
   @IsOptional()
@@ -12,8 +12,8 @@ export class QueryTransactionDto {
   categoryId?: string;
 
   @IsOptional()
-  @IsEnum(TransactionType)
-  type?: TransactionType;
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
+  type?: TransactionType | 'TRANSFER';
 
   @IsOptional()
   @IsDateString()

@@ -11,12 +11,12 @@ const BOB = 'bob';
 // Prisma falso: cada usuario tiene una cuenta y una categoría propias.
 function createPrismaMock() {
   const accounts = [
-    { id: 'acc-alice', userId: ALICE },
-    { id: 'acc-bob', userId: BOB },
+    { id: 'acc-alice', userId: ALICE, currency: 'COP' },
+    { id: 'acc-bob', userId: BOB, currency: 'COP' },
   ];
   const categories = [
-    { id: 'cat-alice', userId: ALICE },
-    { id: 'cat-bob', userId: BOB },
+    { id: 'cat-alice', userId: ALICE, type: 'EXPENSE', parentId: null },
+    { id: 'cat-bob', userId: BOB, type: 'EXPENSE', parentId: null },
   ];
   const findOwned =
     (rows: { id: string; userId: string }[]) =>
@@ -34,7 +34,7 @@ function createPrismaMock() {
       update: vi.fn((args: unknown) => Promise.resolve(args)),
     },
     transaction: {
-      findUnique: vi.fn(() => Promise.resolve({ id: 'tx-alice', userId: ALICE })),
+      findUnique: vi.fn(() => Promise.resolve({ id: 'tx-alice', userId: ALICE, accountId: 'acc-alice', categoryId: 'cat-alice', type: 'EXPENSE', currency: 'COP' })),
       create: vi.fn((args: unknown) => Promise.resolve(args)),
       update: vi.fn((args: unknown) => Promise.resolve(args)),
     },

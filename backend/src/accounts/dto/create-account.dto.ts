@@ -1,5 +1,5 @@
 import { AccountType } from '@prisma/client';
-import { IsEnum, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class CreateAccountDto {
   @IsString()
@@ -15,6 +15,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsString()
+  @Matches(/^[A-Z]{3}$/)
   currency?: string;
 
   @IsOptional()

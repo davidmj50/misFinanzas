@@ -5,6 +5,7 @@ import { TransactionsService } from './transactions.service.js';
 import { CreateTransactionDto } from './dto/create-transaction.dto.js';
 import { UpdateTransactionDto } from './dto/update-transaction.dto.js';
 import { QueryTransactionDto } from './dto/query-transaction.dto.js';
+import { SummaryQueryDto } from './dto/summary-query.dto.js';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -24,10 +25,9 @@ export class TransactionsController {
   @Get('summary')
   summary(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query() query: SummaryQueryDto,
   ) {
-    return this.transactionsService.summary(user.userId, dateFrom, dateTo);
+    return this.transactionsService.summary(user.userId, query.dateFrom, query.dateTo, query.currency);
   }
 
   @Get(':id')

@@ -1,6 +1,8 @@
 import { INavData } from '@coreui/angular';
 
 export const navItems: INavData[] = [
+  { name: 'Registro rápido', url: '/quick-entry', iconComponent: { name: 'cil-list' } },
+  { name: 'Instalar MisFinanzas', url: '/install', iconComponent: { name: 'cil-cloud-download' } },
   {
     name: 'Dashboard',
     url: '/dashboard',
@@ -12,9 +14,34 @@ export const navItems: INavData[] = [
     iconComponent: { name: 'cil-list' }
   },
   {
+    name: 'Transferencias',
+    url: '/transfers',
+    iconComponent: { name: 'cil-arrow-right' }
+  },
+  {
+    name: 'Importar movimientos',
+    url: '/imports',
+    iconComponent: { name: 'cil-list' }
+  },
+  {
+    name: 'Tarjetas y proyección',
+    url: '/planning',
+    iconComponent: { name: 'cil-calculator' }
+  },
+  {
+    name: 'Comprobantes de gastos',
+    url: '/expense-documents',
+    iconComponent: { name: 'cil-list' }
+  },
+  {
     name: 'Cuentas',
     url: '/accounts',
     iconComponent: { name: 'cil-credit-card' }
+  },
+  {
+    name: 'Reglas de categorización',
+    url: '/categorization-rules',
+    iconComponent: { name: 'cil-tags' }
   },
   {
     name: 'Categorías',

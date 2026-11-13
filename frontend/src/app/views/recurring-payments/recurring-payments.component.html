@@ -33,7 +33,7 @@
                 <td>{{ payment.name }}</td>
                 <td>{{ payment.account.name }}</td>
                 <td>{{ payment.category?.name || 'Sin categoría' }}</td>
-                <td class="text-end">{{ payment.amount | number: '1.0-2' }}</td>
+                <td class="text-end">{{ payment.amount | number: '1.0-2' }} {{ payment.account.currency }}</td>
                 <td>Día {{ payment.dueDay }}</td>
                 <td>
                   @if (payment.active) {

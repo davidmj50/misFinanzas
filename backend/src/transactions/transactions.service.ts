@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { monthKey } from '../common/dates.js';
@@ -13,17 +13,19 @@ export class TransactionsService {
 
   async create(userId: string, dto: CreateTransactionDto) {
     const { accountId, categoryId, ...rest } = dto;
-    await assertAccountOwned(this.prisma, userId, accountId);
-    if (categoryId) await assertCategoryOwned(this.prisma, userId, categoryId);
+    const account = await assertAccountOwned(this.prisma, userId, accountId);
+    if (dto.currency && dto.currency !== account.currency) throw new BadRequestException('La moneda debe coincidir con la cuenta');
+    if (categoryId) await assertCategoryOwned(this.prisma, userId, categoryId, dto.type);
     return this.prisma.transaction.create({
       data: {
         ...rest,
+        currency: account.currency,
         date: new Date(dto.date),
         user: { connect: { id: userId } },
         account: { connect: { id: accountId } },
         ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
       },
-      include: { account: true, category: true },
+      include: { account: true, category: true, _count: { select: { expenseDocuments: true } } },
     });
   }
 
@@ -35,7 +37,7 @@ export class TransactionsService {
       userId,
       ...(query.accountId ? { accountId: query.accountId } : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
-      ...(query.type ? { type: query.type } : {}),
+      ...(query.type === 'TRANSFER' ? { transferId: { not: null } } : query.type ? { type: query.type, transferId: null } : {}),
       ...(query.dateFrom || query.dateTo
         ? {
             date: {
@@ -58,7 +60,7 @@ export class TransactionsService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.transaction.findMany({
         where,
-        include: { account: true, category: true },
+        include: { account: true, category: true, _count: { select: { expenseDocuments: true } } },
         orderBy: { date: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -72,7 +74,7 @@ export class TransactionsService {
   async findOne(userId: string, id: string) {
     const transaction = await this.prisma.transaction.findUnique({
       where: { id },
-      include: { account: true, category: true },
+      include: { account: true, category: true, _count: { select: { expenseDocuments: true } } },
     });
     if (!transaction) throw new NotFoundException('Transacción no encontrada');
     if (transaction.userId !== userId) throw new ForbiddenException();
@@ -80,14 +82,20 @@ export class TransactionsService {
   }
 
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
-    await this.findOne(userId, id);
+    const current = await this.findOne(userId, id);
+    if (current.externalRef?.startsWith('recurring:')) throw new BadRequestException('Elimina este pago recurrente y regístralo de nuevo desde Planificación para corregirlo');
+    if (current.transferId) throw new BadRequestException('Gestiona la operación completa desde Transferencias');
+    if (dto.type && dto.type !== current.type && await this.prisma.expenseDocument.count({ where: { transactionId: id } })) throw new BadRequestException('Elimina los comprobantes antes de cambiar el gasto a ingreso');
     const { accountId, categoryId, date, ...rest } = dto;
-    if (accountId) await assertAccountOwned(this.prisma, userId, accountId);
-    if (categoryId) await assertCategoryOwned(this.prisma, userId, categoryId);
+    const account = await assertAccountOwned(this.prisma, userId, accountId ?? current.accountId);
+    if (dto.currency && dto.currency !== account.currency) throw new BadRequestException('La moneda debe coincidir con la cuenta');
+    const effectiveCategoryId = categoryId === undefined ? current.categoryId : categoryId;
+    if (effectiveCategoryId) await assertCategoryOwned(this.prisma, userId, effectiveCategoryId, dto.type ?? current.type);
     return this.prisma.transaction.update({
       where: { id },
       data: {
         ...rest,
+        currency: account.currency,
         ...(date ? { date: new Date(date) } : {}),
         ...(accountId ? { account: { connect: { id: accountId } } } : {}),
         ...(categoryId !== undefined
@@ -96,18 +104,21 @@ export class TransactionsService {
             : { category: { disconnect: true } }
           : {}),
       },
-      include: { account: true, category: true },
+      include: { account: true, category: true, _count: { select: { expenseDocuments: true } } },
     });
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
+    const current = await this.findOne(userId, id);
+    if (current.transferId) throw new BadRequestException('Gestiona la operación completa desde Transferencias');
     return this.prisma.transaction.delete({ where: { id } });
   }
 
-  async summary(userId: string, dateFrom?: string, dateTo?: string) {
+  async summary(userId: string, dateFrom?: string, dateTo?: string, currency = 'COP') {
     const where: Prisma.TransactionWhereInput = {
       userId,
+      currency,
+      transferId: null,
       ...(dateFrom || dateTo
         ? {
             date: {
@@ -149,6 +160,7 @@ export class TransactionsService {
     }
 
     return {
+      currency,
       totalIncome: Number(totalsByType.find((t) => t.type === 'INCOME')?._sum.amount ?? 0),
       totalExpense: Number(totalsByType.find((t) => t.type === 'EXPENSE')?._sum.amount ?? 0),
       byCategory: byCategory.map((c) => ({

@@ -11,6 +11,7 @@ async function bootstrap() {
   // rate limiting use la IP real del cliente sin permitir falsificarla con X-Forwarded-For.
   app.set('trust proxy', 1);
   app.use(helmet());
+  app.useBodyParser('json', { limit: '2mb' });
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(

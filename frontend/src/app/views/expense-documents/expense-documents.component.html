@@ -1,0 +1,70 @@
+<c-card class="mb-4">
+  <c-card-header><strong>Comprobantes de gastos</strong></c-card-header>
+  <c-card-body>
+    <p>Adjunta una factura o recibo y extrae fecha, comercio y monto para facilitar el registro. Revisa siempre los datos sugeridos contra el documento.</p>
+    <p class="small text-body-secondary">La lectura ocurre en tu navegador. Los archivos se envían a MisFinanzas al guardar y quedan asociados al gasto con acceso privado. Hasta 3 documentos por gasto, de 5 MB cada uno: PDF, JPG, PNG o WebP. Se analizan hasta las primeras 3 páginas de cada PDF.</p>
+    <a routerLink="/transactions" class="me-3">Ver transacciones</a>@if (transactionId()) { <a routerLink="/expense-documents">Crear otro gasto con comprobante</a> }
+    @if (error()) { <c-alert color="danger" class="mt-3" role="alert">{{ error() }}</c-alert> }
+    @if (notice()) { <c-alert color="success" class="mt-3" role="status">{{ notice() }}</c-alert> }
+    @if (loading() || loadingExpense()) { <p role="status" class="mt-3">Cargando...</p> }
+  </c-card-body>
+</c-card>
+@if (expense(); as saved) {
+  <c-card class="mb-4"><c-card-header><strong>Gasto registrado</strong></c-card-header><c-card-body>
+    <p>{{ saved.date.slice(0, 10) }} · {{ saved.merchant || saved.description || 'Sin comercio' }} · <strong>{{ saved.amount }} {{ saved.currency }}</strong> · {{ saved.account?.name }}</p>
+    <p class="small text-body-secondary">Adjuntar o analizar un documento no modifica este movimiento. Puedes editar sus datos desde Transacciones.</p>
+    <table cTable [responsive]="true" align="middle"><thead><tr><th>Documento</th><th>Tipo</th><th>Tamaño</th><th>Acciones</th></tr></thead><tbody>
+      @for (doc of documents(); track doc.id) { <tr><td>{{ doc.fileName }}</td><td>{{ doc.mimeType }}</td><td>{{ doc.size / 1024 | number:'1.0-0' }} KB</td><td>
+        <button cButton color="primary" size="sm" variant="outline" [disabled]="!!downloadingId()" (click)="download(doc)">Descargar</button>
+        @if (deleteConfirmation() === doc.id) { <span class="small ms-2">¿Eliminar documento?</span><button cButton color="danger" size="sm" class="ms-2" [disabled]="locked()" (click)="remove(doc)">Confirmar eliminación</button><button cButton color="secondary" size="sm" class="ms-2" [disabled]="locked()" (click)="deleteConfirmation.set(null)">Cancelar</button> }
+        @else { <button cButton color="danger" size="sm" variant="outline" class="ms-2" [disabled]="locked()" (click)="deleteConfirmation.set(doc.id)">Eliminar documento</button> }
+      </td></tr> } @empty { <tr><td colspan="4" class="text-body-secondary">Este gasto todavía no tiene documentos adjuntos.</td></tr> }
+    </tbody></table>
+  </c-card-body></c-card>
+}
+@if (!transactionId() || expense()) {
+  <c-card class="mb-4"><c-card-header><strong>Seleccionar documentos</strong></c-card-header><c-card-body>
+    <fieldset [disabled]="locked() || documents().length + selected().length >= 3">
+      <label cLabel for="receiptFiles">Documentos del gasto</label><input cFormControl id="receiptFiles" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple (change)="chooseFiles($event)" />
+    </fieldset>
+    <div [formGroup]="readingOptions" class="row g-3 mt-1"><div class="col-md-6"><label cLabel for="receiptDateFormat">Interpretar fechas numéricas como</label><select cSelect id="receiptDateFormat" formControlName="dateFormat" [attr.disabled]="locked() ? '' : null"><option value="DMY">Día/Mes/Año</option><option value="MDY">Mes/Día/Año</option></select></div></div>
+    @if (preparing()) { <p role="status" class="mt-3">Preparando documentos...</p> }
+    @if (analyzingId()) { <div class="d-flex flex-wrap gap-3 align-items-center mt-3"><span role="status">{{ progress() }}</span><button cButton color="secondary" size="sm" (click)="cancelAnalysis()">Cancelar lectura</button></div> }
+    @for (item of selected(); track item.id) {
+      <div class="border rounded p-3 mt-3">
+        <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ item.file.name }} · {{ item.file.size / 1024 | number:'1.0-0' }} KB</strong><div><button cButton color="primary" size="sm" [disabled]="locked()" (click)="analyze(item.id)">{{ item.reading ? 'Analizar de nuevo' : 'Extraer datos' }}</button><button cButton color="secondary" size="sm" class="ms-2" [disabled]="locked()" (click)="removeSelected(item.id)">Quitar selección</button></div></div>
+        @if (item.preview) { <img [src]="item.preview" [alt]="'Vista previa de ' + item.file.name" class="img-fluid rounded mt-3" style="max-height: 220px; object-fit: contain" /> }
+        @if (item.error) { <c-alert color="warning" class="mt-3">{{ item.error }} Puedes conservar el documento y completar los datos manualmente.</c-alert> }
+        @if (item.reading; as reading) {
+          <p class="small text-body-secondary mt-3">{{ reading.method === 'PDF_TEXT' ? 'Texto del PDF' : 'Lectura OCR local' }} · Datos sugeridos, pendientes de revisión</p>
+          <dl class="row mb-2"><dt class="col-sm-3">Fecha</dt><dd class="col-sm-9">{{ reading.suggestions.date || 'No identificada' }}</dd><dt class="col-sm-3">Comercio</dt><dd class="col-sm-9">{{ reading.suggestions.merchant || 'No identificado' }}</dd><dt class="col-sm-3">Monto</dt><dd class="col-sm-9">{{ reading.suggestions.amount === null ? 'No identificado' : (reading.suggestions.amount | number:'1.0-2') }} {{ reading.suggestions.currency || '(moneda por confirmar)' }}</dd></dl>
+          @for (warning of reading.warnings.concat(reading.suggestions.warnings); track $index) { <p class="small text-warning-emphasis mb-1">{{ warning }}</p> }
+          @if (!transactionId()) {
+            <div [formGroup]="readingOptions" class="d-flex flex-wrap gap-3 my-3"><label class="form-check"><input class="form-check-input" type="checkbox" formControlName="useDate" /> Usar fecha</label><label class="form-check"><input class="form-check-input" type="checkbox" formControlName="useMerchant" /> Usar comercio</label><label class="form-check"><input class="form-check-input" type="checkbox" formControlName="useAmount" /> Usar monto</label></div>
+            <button cButton color="secondary" size="sm" [disabled]="locked()" (click)="apply(item.id)">Usar datos seleccionados</button>
+          }
+          <details class="mt-3"><summary>Ver texto reconocido</summary><pre class="small mt-2 text-wrap" style="max-height: 240px; overflow: auto; white-space: pre-wrap">{{ reading.text }}</pre></details>
+        }
+      </div>
+    }
+  </c-card-body></c-card>
+  @if (!transactionId()) {
+    <c-card class="mb-4"><c-card-header><strong>Revisar gasto antes de guardar</strong></c-card-header><c-card-body>
+      <form [formGroup]="form"><fieldset [disabled]="locked()" class="row g-3">
+        <div class="col-md-6"><label cLabel for="receiptAccount">Cuenta</label><select cSelect id="receiptAccount" formControlName="accountId"><option value="">Selecciona una cuenta</option>@for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }} ({{ account.currency }})</option> }</select></div>
+        <div class="col-md-6"><label cLabel for="receiptCategory">Categoría de gasto</label><select cSelect id="receiptCategory" formControlName="categoryId"><option value="">Sin categoría</option>@for (category of categories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select></div>
+        <div class="col-md-6"><label cLabel for="receiptDate">Fecha del gasto</label><input cFormControl id="receiptDate" formControlName="date" type="date" /></div>
+        <div class="col-md-6"><label cLabel for="receiptAmount">Monto ({{ selectedCurrency() || 'moneda de la cuenta' }})</label><input cFormControl id="receiptAmount" formControlName="amount" type="number" min="0.01" step="0.01" /></div>
+        <div class="col-12"><label cLabel for="receiptMerchant">Comercio</label><input cFormControl id="receiptMerchant" formControlName="merchant" maxlength="200" /></div>
+        <div class="col-12"><label cLabel for="receiptDescription">Descripción</label><input cFormControl id="receiptDescription" formControlName="description" maxlength="500" /></div>
+        <div class="col-12"><label cLabel for="receiptNotes">Notas</label><textarea cFormControl id="receiptNotes" formControlName="notes" maxlength="1000" rows="2"></textarea></div>
+      </fieldset></form>
+      @if (currencyMismatch()) { <c-alert color="warning" class="mt-3">El documento menciona {{ detectedCurrency() }} y la cuenta usa {{ selectedCurrency() }}. Revisa el importe en la moneda de la cuenta.<label class="form-check mt-2"><input class="form-check-input" type="checkbox" [checked]="currencyConfirmed()" [disabled]="locked()" (change)="currencyConfirmed.set($any($event.target).checked)" /> Confirmo que el monto revisado está expresado en {{ selectedCurrency() }}.</label></c-alert> }
+    </c-card-body></c-card>
+  }
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <button cButton color="primary" [disabled]="saving() || loading() || loadingExpense() || preparing() || !!analyzingId() || (!hasPending() && (!selected().length || (!transactionId() && (form.invalid || (currencyMismatch() && !currencyConfirmed())))))" (click)="save()">{{ saving() ? 'Guardando...' : hasPending() ? 'Reintentar el mismo envío' : transactionId() ? 'Adjuntar documentos al gasto' : 'Guardar gasto y documentos' }}</button>
+    @if (hasPending() && !saving()) { <button cButton color="secondary" (click)="discardPending()">Revisar datos y descartar envío</button> }
+  </div>
+  @if (hasPending()) { <p class="small text-body-secondary">Se conservan los archivos, los datos y la clave del envío. Si falló la conexión, reintenta el mismo envío para confirmar el resultado sin crear otro gasto.</p> }
+}

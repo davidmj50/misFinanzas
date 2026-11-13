@@ -1,4 +1,5 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { monthKey } from '../common/dates.js';
 import { CreateAccountDto } from './dto/create-account.dto.js';
@@ -41,13 +42,31 @@ export class AccountsService {
   }
 
   async update(userId: string, id: string, dto: UpdateAccountDto) {
-    await this.findOne(userId, id);
+    const current = await this.findOne(userId, id);
+    if (dto.currency && dto.currency !== current.currency) {
+      const [transactions, payments] = await Promise.all([
+        this.prisma.transaction.count({ where: { accountId: id } }),
+        this.prisma.recurringPayment.count({ where: { accountId: id } }),
+      ]);
+      if (transactions || payments) throw new BadRequestException('No puedes cambiar la moneda de una cuenta con movimientos o pagos recurrentes');
+    }
+    if ((dto.type && dto.type !== current.type) || (dto.currency && dto.currency !== current.currency)) {
+      const linked = await this.prisma.account.findFirst({ where: { id, OR: [{ cardProfile: { isNot: null } }, { cardsPaidFrom: { some: {} } }, { cardStatements: { some: {} } }] }, select: { id: true } });
+      if (linked) throw new BadRequestException('La cuenta está vinculada al control de tarjetas; conserva su tipo y moneda');
+    }
     return this.prisma.account.update({ where: { id }, data: dto });
   }
 
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
-    return this.prisma.account.delete({ where: { id } });
+    try {
+      return await this.prisma.account.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new ConflictException('La cuenta tiene transferencias vinculadas. Elimina primero las transferencias o archiva la cuenta.');
+      }
+      throw error;
+    }
   }
 
   async getBalanceHistory(userId: string, id: string) {

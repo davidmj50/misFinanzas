@@ -70,7 +70,7 @@
           <label cLabel for="parentId">Categoría padre (opcional)</label>
           <select cSelect formControlName="parentId" id="parentId">
             <option value="">Ninguna</option>
-            @for (parent of topLevelCategories(); track parent.id) {
+            @for (parent of parentCandidates(); track parent.id) {
               @if (parent.id !== editingId()) {
                 <option [value]="parent.id">{{ parent.name }}</option>
               }

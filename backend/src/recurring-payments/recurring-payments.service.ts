@@ -18,7 +18,7 @@ export class RecurringPaymentsService {
 
   async create(userId: string, dto: CreateRecurringPaymentDto) {
     await assertAccountOwned(this.prisma, userId, dto.accountId);
-    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId, 'EXPENSE');
     return this.prisma.recurringPayment.create({
       data: { ...dto, userId },
       include: { account: true, category: true },
@@ -47,7 +47,7 @@ export class RecurringPaymentsService {
   async update(userId: string, id: string, dto: UpdateRecurringPaymentDto) {
     await this.findOwned(userId, id);
     if (dto.accountId) await assertAccountOwned(this.prisma, userId, dto.accountId);
-    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId);
+    if (dto.categoryId) await assertCategoryOwned(this.prisma, userId, dto.categoryId, 'EXPENSE');
     return this.prisma.recurringPayment.update({
       where: { id },
       data: dto,
@@ -80,7 +80,7 @@ export class RecurringPaymentsService {
       const subject = `Recordatorio: ${payment.name} vence ${dueLabel}`;
       const html = `
         <p>Hola ${escapeHtml(payment.user.name)},</p>
-        <p>Tu pago recurrente <strong>${escapeHtml(payment.name)}</strong> por <strong>$${amount}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${escapeHtml(payment.account.name)}</strong>.</p>
+        <p>Tu pago recurrente <strong>${escapeHtml(payment.name)}</strong> por <strong>${amount} ${escapeHtml(payment.account.currency)}</strong> vence <strong>${dueLabel}</strong> (${nextDueDateOnly}), cargado a la cuenta <strong>${escapeHtml(payment.account.name)}</strong>.</p>
         <p>— MisFinanzas</p>
       `;
 

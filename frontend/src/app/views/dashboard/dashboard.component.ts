@@ -1,4 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, of, switchMap, tap } from 'rxjs';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartData, ChartOptions } from 'chart.js';
@@ -9,6 +11,7 @@ import {
   CardComponent,
   CardHeaderComponent,
   ColComponent,
+  FormSelectDirective,
   ProgressComponent,
   RowComponent,
   TableDirective,
@@ -33,6 +36,7 @@ import { localDateString } from '../../core/utils/dates';
     CardHeaderComponent,
     ChartjsComponent,
     ColComponent,
+    FormSelectDirective,
     DecimalPipe,
     ProgressComponent,
     RouterLink,
@@ -41,11 +45,16 @@ import { localDateString } from '../../core/utils/dates';
   ],
 })
 export class DashboardComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  readonly currency = signal('COP');
+  private readonly currencyChanges = toObservable(this.currency);
   readonly summary = signal<TransactionSummary | null>(null);
   readonly loading = signal(false);
   readonly accounts = signal<Account[]>([]);
   readonly budgets = signal<Budget[]>([]);
   readonly savingsGoals = signal<SavingsGoal[]>([]);
+  readonly currencies = computed(() => [...new Set(['COP', ...this.accounts().map((a) => a.currency)])].sort());
+  readonly errorMessage = signal<string | null>(null);
 
   chartData: ChartData = { labels: [], datasets: [] };
   chartOptions: ChartOptions = {};
@@ -62,13 +71,19 @@ export class DashboardComponent implements OnInit {
     const now = new Date();
     const dateFrom = localDateString(new Date(now.getFullYear(), now.getMonth() - 11, 1));
 
-    this.transactionsService.summary(dateFrom).subscribe({
+    this.currencyChanges.pipe(
+      tap(() => { this.loading.set(true); this.summary.set(null); this.errorMessage.set(null); }),
+      switchMap((currency) => this.transactionsService.summary(dateFrom, undefined, currency).pipe(
+        catchError(() => { this.errorMessage.set('No se pudo cargar el resumen.'); return of(null); }),
+      )),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (summary) => {
         this.summary.set(summary);
-        this.buildChart(summary);
+        if (summary) this.buildChart(summary);
+        else this.chartData = { labels: [], datasets: [] };
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
     });
 
     this.accountsService.list().subscribe((accounts) => this.accounts.set(accounts.filter((a) => !a.archived)));

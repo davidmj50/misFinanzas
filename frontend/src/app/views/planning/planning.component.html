@@ -1,0 +1,119 @@
+<c-card class="mb-4">
+  <c-card-header><strong>Tarjetas y proyección de saldo</strong></c-card-header>
+  <c-card-body>
+    <p>Consulta el cupo de tus tarjetas, organiza los extractos y anticipa el saldo de cada cuenta para los próximos pagos.</p>
+    @if (error()) { <c-alert color="danger" role="alert">{{ error() }}</c-alert> }
+    @if (notice()) { <c-alert color="success" role="status">{{ notice() }}</c-alert> }
+    <p class="small text-body-secondary">Los saldos de esta pantalla usan movimientos con fecha hasta hoy. Los movimientos futuros se incorporan el día previsto. Las estimaciones no crean transacciones.</p>
+    <a routerLink="/accounts" class="me-3">Administrar cuentas y tarjetas</a><a routerLink="/recurring-payments" class="me-3">Pagos recurrentes</a><a routerLink="/transactions">Registrar ingresos o gastos futuros</a>
+  </c-card-body>
+</c-card>
+
+@if (loading()) { <p role="status">Cargando tarjetas y cuentas...</p> }
+@for (card of cards(); track card.id) {
+  <c-card class="mb-4">
+    <c-card-header class="d-flex flex-wrap gap-2 justify-content-between"><strong>{{ card.name }} · {{ card.currency }}</strong><div><button cButton color="secondary" size="sm" [disabled]="busy() || loading()" (click)="configure(card)">Configurar tarjeta</button><button cButton color="primary" size="sm" class="ms-2" [disabled]="busy() || loading()" (click)="editStatement(card)">Añadir extracto</button></div></c-card-header>
+    <c-card-body>
+      <div class="row gy-3 mb-3">
+        <div class="col-md-3"><div class="small text-body-secondary">Deuda según movimientos a hoy</div><strong>{{ card.debt | number:'1.0-2' }} {{ card.currency }}</strong></div>
+        <div class="col-md-3"><div class="small text-body-secondary">Cupo configurado</div><strong>{{ card.cardProfile ? (card.cardProfile.creditLimit | number:'1.0-2') : 'Sin configurar' }}</strong></div>
+        <div class="col-md-3"><div class="small text-body-secondary">Cupo disponible según movimientos</div><strong>{{ card.availableCredit === null ? '—' : (card.availableCredit | number:'1.0-2') }}</strong></div>
+        <div class="col-md-3"><div class="small text-body-secondary">Uso del cupo</div><strong [class.text-danger]="(card.utilization ?? 0) > 100">{{ card.utilization === null ? '—' : (card.utilization | number:'1.0-2') + '%' }}</strong></div>
+      </div>
+      @if (card.cardProfile; as config) {
+        <p class="small">Próximo corte estimado: <strong>{{ card.nextClosingDate }}</strong> · Vencimiento estimado de ese corte: <strong>{{ card.nextPaymentDate }}</strong> · Cuenta de pago: <strong>{{ config.paymentAccount?.name || 'Sin asignar' }}</strong>.</p>
+        @if (!config.paymentAccount || config.paymentAccount.archived) { <c-alert color="warning">Asigna una cuenta de pago activa para incluir los extractos pendientes en la proyección.</c-alert> }
+      } @else { <c-alert color="info">Configura el cupo, los días de corte y pago, y la cuenta desde la que pagarás.</c-alert> }
+      <p class="small text-body-secondary">Introduce los importes y fechas exactos del extracto del banco. Solo se proyecta el extracto más reciente, cuyo total debe incluir los saldos anteriores que arrastre el banco. Los pagos por transferencia posteriores al corte se descuentan automáticamente. Los días 29–31 se ajustan al último día del mes; los festivos y cargos nuevos no se calculan. Registrar un extracto no añade deuda al registro de movimientos.</p>
+      <table cTable [responsive]="true" align="middle"><thead><tr><th>Corte</th><th>Vencimiento / plan</th><th>Total / mínimo</th><th>Pagado / futuro</th><th>Pendiente total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+        @for (statement of card.statements; track statement.id) {
+          <tr><td>{{ statement.closingDate.slice(0, 10) }}</td><td>{{ statement.dueDate.slice(0, 10) }}<div class="small text-body-secondary">Plan: {{ (statement.plannedPaymentDate || statement.dueDate).slice(0, 10) }}</div></td>
+            <td>{{ statement.total | number:'1.0-2' }} / {{ statement.minimumPayment | number:'1.0-2' }}</td><td>{{ statement.paid | number:'1.0-2' }} / {{ statement.scheduled | number:'1.0-2' }}</td><td>{{ statement.remaining | number:'1.0-2' }} {{ card.currency }}<div class="small">Sin programar: {{ statement.unplanned | number:'1.0-2' }}</div></td>
+            <td><c-badge [color]="statement.remaining === 0 ? 'success' : statement.overdue ? 'danger' : 'warning'">{{ !statement.isLatest ? 'Anterior: fuera del plan' : statement.remaining === 0 ? 'Pagado' : statement.overdue ? 'Vencido' : statement.unplanned === 0 ? 'Programado' : 'Pendiente' }}</c-badge>@if (statement.scheduledLate) { <div class="small text-danger">Pago futuro posterior al vencimiento</div> }</td>
+            <td><div class="d-flex flex-wrap gap-2"><button cButton size="sm" color="primary" [disabled]="busy() || loading() || hasPendingPayment() || statement.unplanned <= 0 || !statement.isLatest" (click)="openPayment(card, statement)">Registrar pago</button><button cButton size="sm" color="secondary" [disabled]="busy() || loading()" (click)="editStatement(card, statement)">Editar extracto</button>
+              @if (deletingStatement() === statement.id) { <button cButton color="danger" size="sm" [disabled]="busy()" (click)="removeStatement(statement.id)">Confirmar eliminación</button><button cButton color="secondary" size="sm" [disabled]="busy()" (click)="deletingStatement.set(null)">Cancelar</button> }
+              @else { <button cButton color="danger" variant="outline" size="sm" [disabled]="busy() || loading() || statement.payments.length > 0" (click)="deletingStatement.set(statement.id)">Eliminar extracto</button> }
+            </div></td>
+          </tr>
+          @if (statement.payments.length) { <tr><td colspan="7"><details><summary>Ver {{ statement.payments.length }} pagos vinculados</summary><ul class="mt-2">@for (payment of statement.payments; track payment.id) { <li>{{ payment.date.slice(0, 10) }} · {{ payment.destinationAmount | number:'1.0-2' }} {{ card.currency }} desde {{ payment.fromAccount.name }}</li> }</ul><a routerLink="/transfers">Gestionar transferencias de pago</a></details></td></tr> }
+        } @empty { <tr><td colspan="7" class="text-body-secondary">Sin extractos registrados. Añade el último extracto para proyectar su pago.</td></tr> }
+      </tbody></table>
+    </c-card-body>
+  </c-card>
+} @empty { @if (!loading()) { <c-alert color="info">No tienes tarjetas de crédito activas. Puedes <a routerLink="/accounts">crear una tarjeta</a> y usar la proyección para tus otras cuentas.</c-alert> } }
+
+@if (configuredCard(); as card) {
+  <c-card class="mb-4" id="cardConfiguration"><c-card-header><strong>Configurar {{ card.name }}</strong></c-card-header><c-card-body>
+    <form [formGroup]="cardForm" (ngSubmit)="saveCard()"><fieldset [disabled]="busy() || loading()" class="row g-3">
+      <div class="col-md-4"><label cLabel for="creditLimit">Cupo ({{ card.currency }})</label><input cFormControl id="creditLimit" formControlName="creditLimit" type="number" min="0.01" step="0.01" /></div>
+      <div class="col-md-4"><label cLabel for="closingDay">Día de corte</label><input cFormControl id="closingDay" formControlName="closingDay" type="number" min="1" max="31" step="1" /></div>
+      <div class="col-md-4"><label cLabel for="paymentDay">Día de pago</label><input cFormControl id="paymentDay" formControlName="paymentDay" type="number" min="1" max="31" step="1" /></div>
+      <div class="col-12"><label cLabel for="cardPaymentAccount">Cuenta para proyectar pagos</label><select cSelect id="cardPaymentAccount" formControlName="paymentAccountId"><option value="">Sin asignar</option>@for (account of fundingAccounts(card.currency); track account.id) { <option [value]="account.id">{{ account.name }} ({{ account.currency }})</option> }</select></div>
+      <div class="col-12"><button cButton color="primary" type="submit" [disabled]="cardForm.invalid">Guardar configuración</button><button cButton color="secondary" type="button" class="ms-2" (click)="configuredCard.set(null)">Cancelar configuración</button></div>
+    </fieldset></form>
+  </c-card-body></c-card>
+}
+@if (statementEditor(); as editor) {
+  <c-card class="mb-4" id="statementEditor"><c-card-header><strong>{{ editor.id ? 'Editar extracto' : 'Nuevo extracto' }} · {{ editor.card.name }}</strong></c-card-header><c-card-body>
+    <form [formGroup]="statementForm" (ngSubmit)="saveStatement()"><fieldset [disabled]="busy() || loading()" class="row g-3">
+      <div class="col-md-4"><label cLabel for="statementClosingDate">Fecha de corte del extracto</label><input cFormControl id="statementClosingDate" formControlName="closingDate" type="date" [max]="calendarToday" /></div>
+      <div class="col-md-4"><label cLabel for="statementDueDate">Fecha límite de pago</label><input cFormControl id="statementDueDate" formControlName="dueDate" type="date" /></div>
+      <div class="col-md-4"><label cLabel for="statementPlanDate">Fecha prevista de pago (opcional)</label><input cFormControl id="statementPlanDate" formControlName="plannedPaymentDate" type="date" /><div class="small text-body-secondary">Si se deja vacía, se usa el vencimiento.</div></div>
+      <div class="col-md-6"><label cLabel for="statementTotal">Total a pagar del extracto ({{ editor.card.currency }})</label><input cFormControl id="statementTotal" formControlName="total" type="number" min="0" step="0.01" /></div>
+      <div class="col-md-6"><label cLabel for="statementMinimum">Pago mínimo del extracto</label><input cFormControl id="statementMinimum" formControlName="minimumPayment" type="number" min="0" step="0.01" /></div>
+      <div class="col-12"><button cButton color="primary" type="submit" [disabled]="statementForm.invalid">Guardar extracto</button><button cButton color="secondary" type="button" class="ms-2" (click)="statementEditor.set(null)">Cancelar extracto</button></div>
+    </fieldset></form>
+  </c-card-body></c-card>
+}
+@if (paymentEditor(); as editor) {
+  <c-card class="mb-4" id="paymentEditor"><c-card-header><strong>Registrar pago · {{ editor.card.name }} · corte {{ editor.statement.closingDate.slice(0, 10) }}</strong></c-card-header><c-card-body>
+    <p>Se creará una transferencia desde la cuenta elegida hacia la tarjeta. El pago reduce el pendiente del extracto. Una fecha futura programa el movimiento para ese día.</p>
+    <form [formGroup]="paymentForm" (ngSubmit)="pay()"><fieldset [disabled]="busy() || hasPendingPayment() || loading()" class="row g-3">
+      <div class="col-md-4"><label cLabel for="paymentSource">Pagar desde</label><select cSelect id="paymentSource" formControlName="fromAccountId"><option value="">Selecciona una cuenta</option>@for (account of fundingAccounts(editor.card.currency); track account.id) { <option [value]="account.id">{{ account.name }} ({{ account.currency }})</option> }</select></div>
+      <div class="col-md-4"><label cLabel for="paymentAmount">Importe ({{ editor.card.currency }})</label><input cFormControl id="paymentAmount" formControlName="amount" type="number" min="0.01" [max]="editor.statement.unplanned" step="0.01" /></div>
+      <div class="col-md-4"><label cLabel for="paymentDate">Fecha del pago</label><input cFormControl id="paymentDate" formControlName="date" type="date" /></div>
+    </fieldset><div class="mt-3"><button cButton color="primary" type="submit" [disabled]="busy() || loading() || (!hasPendingPayment() && paymentForm.invalid)">{{ hasPendingPayment() ? 'Reintentar el mismo pago' : 'Confirmar pago' }}</button><button cButton color="secondary" type="button" class="ms-2" [disabled]="busy() || loading()" (click)="closePayment()">Cerrar pago</button></div></form>
+    @if (hasPendingPayment()) { <p class="small mt-2">Los datos quedan fijos para reintentar el mismo envío sin duplicar la transferencia.</p> }
+  </c-card-body></c-card>
+}
+@if (recurringEditor(); as event) {
+  <c-card class="mb-4" id="recurringEditor"><c-card-header><strong>Registrar recurrente · {{ event.name }} · vence {{ event.dueDate }}</strong></c-card-header><c-card-body>
+    <p>Se guardará un gasto vinculado a este vencimiento. La previsión se reemplazará por el movimiento, aunque el importe real sea diferente. Usa una fecha futura si quieres programarlo.</p>
+    <form [formGroup]="recurringForm" (ngSubmit)="recordRecurring()"><fieldset [disabled]="busy() || hasPendingRecurring() || loading()" class="row g-3">
+      <div class="col-md-6"><label cLabel for="recurringAmount">Importe real</label><input cFormControl id="recurringAmount" formControlName="amount" type="number" min="0.01" step="0.01" /></div>
+      <div class="col-md-6"><label cLabel for="recurringDate">Fecha del movimiento</label><input cFormControl id="recurringDate" formControlName="date" type="date" /></div>
+    </fieldset><div class="mt-3"><button cButton color="primary" type="submit" [disabled]="busy() || loading() || (!hasPendingRecurring() && recurringForm.invalid)">{{ hasPendingRecurring() ? 'Reintentar el mismo recurrente' : 'Confirmar recurrente' }}</button><button cButton color="secondary" type="button" class="ms-2" [disabled]="busy() || loading()" (click)="closeRecurring()">Cerrar recurrente</button></div></form>
+  </c-card-body></c-card>
+}
+
+<c-card class="mb-4"><c-card-header><strong>Proyección de saldo</strong></c-card-header><c-card-body>
+  <form [formGroup]="forecastForm" (ngSubmit)="calculate()"><fieldset [disabled]="loading() || busy() || projecting()" class="row g-3">
+    <div class="col-md-4"><label cLabel for="projectionAccount">Cuenta a proyectar</label><select cSelect id="projectionAccount" formControlName="accountId"><option value="">Selecciona una cuenta</option>@for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }} ({{ account.currency }})</option> }</select></div>
+    <div class="col-md-4"><label cLabel for="projectionDays">Horizonte</label><select cSelect id="projectionDays" formControlName="days"><option [ngValue]="30">30 días</option><option [ngValue]="60">60 días</option><option [ngValue]="90">90 días</option></select></div>
+    <div class="col-md-4"><label cLabel for="projectionPaymentMode">Escenario de tarjetas</label><select cSelect id="projectionPaymentMode" formControlName="paymentMode"><option value="FULL">Cubrir total del extracto</option><option value="MINIMUM">Cubrir pago mínimo</option></select></div>
+    <div class="col-12"><label class="form-check"><input type="checkbox" class="form-check-input" formControlName="includeRecurring" /> Incluir pagos recurrentes activos</label></div>
+    <div class="col-12"><button cButton color="primary" type="submit" [disabled]="forecastForm.invalid">{{ projecting() ? 'Calculando...' : 'Actualizar proyección' }}</button></div>
+  </fieldset></form>
+  <p class="small text-body-secondary mt-3">Incluye movimientos futuros registrados, recurrentes pendientes y pagos de extractos desde su cuenta configurada. Las previsiones vencidas de tarjeta se sitúan hoy. No extrapola ingresos, intereses, comisiones ni compras aún sin registrar. Las cuentas y monedas se calculan por separado.</p>
+  <p class="small text-body-secondary">Registra los recurrentes desde esta pantalla para vincularlos a su mes. Los gastos recurrentes antiguos sin vincular no se descuentan automáticamente; puedes excluir los recurrentes del escenario mientras los revisas. Las transferencias hacia la tarjeta posteriores al corte sí reducen el extracto más reciente.</p>
+  @if (forecastForm.controls.paymentMode.value === 'MINIMUM') { <c-alert color="warning">Este escenario cubre solo el mínimo indicado en cada extracto. El resto de la deuda y sus costes futuros quedan fuera de la estimación.</c-alert> }
+  @if (projection(); as forecast) {
+    <h5 class="mt-4">{{ forecast.account.name }} · {{ forecast.asOf }} a {{ forecast.through }} · {{ forecast.account.currency }}</h5>
+    <div class="row gy-3 mb-3">
+      <div class="col-md-3"><div class="small text-body-secondary">Saldo registrado a hoy</div><strong>{{ forecast.openingBalance | number:'1.0-2' }}</strong></div>
+      <div class="col-md-3"><div class="small text-body-secondary">Saldo proyectado final</div><strong>{{ forecast.closingBalance | number:'1.0-2' }}</strong></div>
+      <div class="col-md-3"><div class="small text-body-secondary">Menor saldo del período</div><strong>{{ forecast.minimumBalance | number:'1.0-2' }}</strong></div>
+      <div class="col-md-3"><div class="small text-body-secondary">Entradas / salidas previstas</div><strong>{{ forecast.totalInflows | number:'1.0-2' }} / {{ forecast.totalOutflows | number:'1.0-2' }}</strong></div>
+    </div>
+    @if (forecast.account.type !== 'CREDIT_CARD' && forecast.firstNegativeDate) { <c-alert color="danger">El saldo proyectado puede ser negativo desde {{ forecast.firstNegativeDate }}.</c-alert> }
+    @if (forecast.account.type === 'CREDIT_CARD') { <p class="small">En una tarjeta, el saldo negativo representa deuda. Los pagos aumentan su saldo y las compras lo reducen.</p>@if (forecast.firstOverLimitDate) { <c-alert color="danger">La deuda proyectada supera el cupo configurado desde {{ forecast.firstOverLimitDate }}.</c-alert> } }
+    <div style="height: 300px"><c-chart type="line" [data]="chartData" [options]="chartOptions" [height]="300">Saldo diario proyectado</c-chart></div>
+    <table cTable [responsive]="true" align="middle" class="mt-3"><thead><tr><th>Fecha</th><th>Concepto</th><th>Origen</th><th class="text-end">Efecto en saldo ({{ forecast.account.currency }})</th><th>Acción</th></tr></thead><tbody>
+      @for (event of forecast.events; track event.id) { <tr><td>{{ event.date }}</td><td>{{ event.name }}</td><td>{{ event.kind === 'TRANSACTION' ? 'Movimiento registrado' : event.kind === 'RECURRING' ? 'Recurrente previsto' : 'Extracto previsto' }}</td><td class="text-end" [class.text-danger]="event.amount < 0">{{ event.amount | number:'1.0-2' }}</td><td>
+        @if (event.kind === 'RECURRING') { <button cButton color="secondary" size="sm" [disabled]="busy() || loading() || hasPendingRecurring()" (click)="openRecurring(event)">Registrar recurrente</button> }
+        @else if (event.kind === 'CARD_PAYMENT') { <button cButton color="secondary" size="sm" [disabled]="busy() || loading() || hasPendingPayment()" (click)="payEvent(event)">Pagar extracto</button> }
+        @else { <a routerLink="/transactions">Ver movimientos</a> }
+      </td></tr> } @empty { <tr><td colspan="5" class="text-body-secondary">No hay movimientos previstos en este período. El saldo proyectado se mantiene.</td></tr> }
+    </tbody></table>
+  }
+</c-card-body></c-card>

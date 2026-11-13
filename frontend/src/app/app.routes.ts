@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'install', loadComponent: () => import('./views/install/install.component').then(m => m.InstallComponent), data: { title: 'Instalar MisFinanzas' } },
+  { path: 'quick-entry', canActivate: [authGuard], loadComponent: () => import('./views/quick-entry/quick-entry.component').then(m => m.QuickEntryComponent), data: { title: 'Registro rápido' } },
   {
     path: '',
     redirectTo: 'dashboard',
@@ -30,6 +32,29 @@ export const routes: Routes = [
       {
         path: 'transactions',
         loadChildren: () => import('./views/transactions/routes').then((m) => m.routes)
+      },
+      {
+        path: 'transfers',
+        loadChildren: () => import('./views/transfers/routes').then((m) => m.routes)
+      },
+      {
+        path: 'categorization-rules',
+        loadComponent: () => import('./views/categorization-rules/categorization-rules.component').then(m => m.CategorizationRulesComponent),
+        data: { title: 'Reglas de categorización' }
+      },
+      {
+        path: 'planning',
+        loadComponent: () => import('./views/planning/planning.component').then(m => m.PlanningComponent),
+        data: { title: 'Tarjetas y proyección' }
+      },
+      {
+        path: 'expense-documents',
+        loadComponent: () => import('./views/expense-documents/expense-documents.component').then(m => m.ExpenseDocumentsComponent),
+        data: { title: 'Comprobantes de gastos' }
+      },
+      {
+        path: 'imports',
+        loadChildren: () => import('./views/imports/routes').then((m) => m.routes)
       },
       {
         path: 'budgets',

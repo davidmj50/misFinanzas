@@ -1,0 +1,114 @@
+<c-card class="mb-4">
+  <c-card-header><strong>Importar movimientos</strong></c-card-header>
+  <c-card-body>
+    <a routerLink="/categorization-rules" class="d-inline-block mb-3">Administrar reglas de categorización</a>
+    <p>Selecciona un extracto CSV, TSV o Excel (.xlsx), asigna las columnas y revisa los movimientos antes de guardarlos. Máximo 2 MB y 500 filas por archivo.</p>
+    <p class="small text-body-secondary">El archivo se lee en tu navegador. La vista previa envía las filas interpretadas para comprobar duplicados; guarda únicamente las seleccionadas. Los traslados entre cuentas se registran desde Transferencias.</p>
+    @if (errorMessage()) { <c-alert color="danger" role="alert">{{ errorMessage() }}</c-alert> }
+    @if (result(); as imported) {
+      <c-alert color="success" role="status">Importación terminada: {{ imported.imported }} movimientos guardados y {{ imported.skipped }} omitidos al volver a comprobar duplicados.</c-alert>
+      <a cButton color="primary" routerLink="/transactions" class="me-2">Ver transacciones</a>
+      <button cButton color="secondary" (click)="newReview()">Nueva revisión</button>
+    }
+    <fieldset [disabled]="locked()" class="mt-3">
+      <c-row class="gy-3" [formGroup]="config">
+        <c-col md="6">
+          <label cLabel for="importAccount">Cuenta de destino</label>
+          <select cSelect id="importAccount" formControlName="accountId">
+            <option value="" disabled>Selecciona una cuenta</option>
+            @for (account of accounts(); track account.id) { <option [ngValue]="account.id">{{ account.name }} ({{ account.currency }})</option> }
+          </select>
+        </c-col>
+        <c-col md="6">
+          <label cLabel for="importFile">Archivo</label>
+          <input cFormControl id="importFile" type="file" accept=".csv,.tsv,.xlsx" (change)="chooseFile($event)" />
+        </c-col>
+        <c-col md="3">
+          <label cLabel for="importDelimiter">Separador CSV</label>
+          <select cSelect id="importDelimiter" formControlName="delimiter"><option value="auto">Automático</option><option value=";">Punto y coma</option><option value=",">Coma</option><option value="&#9;">Tabulación</option></select>
+        </c-col>
+        <c-col md="3">
+          <label cLabel for="importEncoding">Codificación CSV</label>
+          <select cSelect id="importEncoding" formControlName="encoding"><option value="utf-8">UTF-8</option><option value="windows-1252">Windows-1252 / Latin-1</option></select>
+        </c-col>
+        @if (sheets().length) {
+          <c-col md="3">
+            <label cLabel for="importSheet">Hoja</label>
+            <select cSelect id="importSheet" formControlName="sheet">@for (sheet of sheets(); track $index) { <option [ngValue]="$index">{{ sheet.name }}</option> }</select>
+          </c-col>
+          <c-col md="3">
+            <label cLabel for="importHeader">Fila de encabezados</label>
+            <input cFormControl id="importHeader" formControlName="headerRow" type="number" min="1" max="2000" />
+          </c-col>
+        }
+      </c-row>
+      @if (columns().length) {
+        <hr />
+        <c-row class="gy-3" [formGroup]="mapping">
+          @for (field of mappingFields; track field.key) {
+            <c-col md="3">
+              <label cLabel [for]="'map-' + field.key">{{ field.label }}</label>
+              <select cSelect [id]="'map-' + field.key" [formControlName]="field.key">
+                <option [ngValue]="-1">No usar</option>
+                @for (column of columns(); track $index) { <option [ngValue]="$index">{{ $index + 1 }}. {{ column }}</option> }
+              </select>
+            </c-col>
+          }
+          <c-col md="4">
+            <label cLabel for="importDateFormat">Formato de fecha</label>
+            <select cSelect id="importDateFormat" formControlName="dateFormat"><option value="ISO">Año-Mes-Día</option><option value="DMY">Día/Mes/Año</option><option value="MDY">Mes/Día/Año</option></select>
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="importDecimal">Formato de importes escritos</label>
+            <select cSelect id="importDecimal" formControlName="decimal"><option value=",">1.234,56 (coma decimal)</option><option value=".">1,234.56 (punto decimal)</option></select>
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="importTypeMode">Tipo cuando no se asigna una columna</label>
+            <select cSelect id="importTypeMode" formControlName="typeMode"><option value="SIGNED">Negativo = gasto; positivo = ingreso</option><option value="EXPENSE">Todos son gastos</option><option value="INCOME">Todos son ingresos</option></select>
+          </c-col>
+        </c-row>
+        <p class="small text-body-secondary mt-3">Si asignas Tipo, se usará Ingreso/Gasto o Abono/Cargo. Moneda vacía hereda la de la cuenta. Categoría debe coincidir con una categoría existente. Asigna Referencia solo si identifica de forma única cada movimiento.</p>
+      }
+    </fieldset>
+    <div class="d-flex gap-2 mt-3">
+      <button cButton color="primary" [disabled]="locked() || !columns().length || config.invalid" (click)="preview()">{{ previewing() ? 'Comprobando...' : reading() ? 'Leyendo...' : 'Revisar y categorizar' }}</button>
+      @if (hasPending() && !saving()) { <button cButton color="secondary" (click)="newReview()">Descartar envío y revisar de nuevo</button> }
+    </div>
+  </c-card-body>
+</c-card>
+
+@if (rows().length) {
+  <c-card>
+    <c-card-header><strong>Vista previa: {{ rows().length }} filas · {{ selectedCount() }} seleccionadas</strong></c-card-header>
+    <c-card-body>
+      <p class="small text-body-secondary">Las reglas completan las categorías vacías. Puedes cambiar cada categoría; se guardará exactamente la selección revisada.</p>
+      <p>{{ duplicateCount() }} coincidencias y {{ invalidCount() }} filas inválidas. Las coincidencias quedan sin seleccionar; puedes incluirlas explícitamente si corresponden a operaciones distintas. Una referencia única ya registrada no se puede repetir.</p>
+      <button cButton color="secondary" size="sm" variant="outline" [disabled]="hasPending() || !reviewed()" (click)="selectNew()">Seleccionar solo nuevos</button>
+      <table cTable [responsive]="true" [striped]="true" class="mt-3" align="middle">
+        <thead><tr><th>Incluir</th><th>Fila</th><th>Fecha</th><th>Tipo</th><th>Descripción / comercio</th><th class="text-end">Importe</th><th>Categoría</th><th>Estado</th></tr></thead>
+        <tbody>
+          @for (row of rows(); track row.rowId) {
+            <tr>
+              <td><input type="checkbox" class="form-check-input" [attr.aria-label]="'Incluir fila ' + row.rowId" [checked]="row.selected" [disabled]="hasPending() || !reviewed() || row.status === 'INVALID' || (row.status !== 'NEW' && !row.canForce)" (change)="toggle(row.rowId, $any($event.target).checked)" /></td>
+              <td>{{ row.rowId }}</td><td>{{ row.payload?.date || '—' }}</td>
+              <td>{{ row.payload ? (row.payload.type === 'INCOME' ? 'Ingreso' : 'Gasto') : '—' }}</td>
+              <td>{{ row.payload?.description || row.payload?.merchant || '—' }}</td>
+              <td class="text-end">{{ row.payload?.amount | number:'1.0-2' }} {{ currency() }}</td>
+              <td>
+                @if (row.payload && row.status !== 'INVALID') {
+                  <select cSelect [attr.aria-label]="'Categoría fila ' + row.rowId" [ngModel]="row.payload.categoryId || ''" [disabled]="hasPending() || !reviewed()" (ngModelChange)="changeCategory(row.rowId, $event)">
+                    <option value="">Sin categoría</option>
+                    @for (category of categories(); track category.id) { @if (category.type === row.payload.type) { <option [value]="category.id">{{ category.name }}</option> } }
+                  </select>
+                  @if (row.matchedRule) { <div class="small text-body-secondary">Regla: {{ row.matchedRule.name }}</div> }
+                }
+              </td>
+              <td><c-badge [color]="row.status === 'NEW' ? 'success' : row.status === 'INVALID' ? 'danger' : 'warning'">{{ labels[row.status] }}</c-badge><div class="small mt-1">{{ row.reason }}</div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <button cButton color="primary" [disabled]="saving() || !reviewed() || (!selectedCount() && !hasPending())" (click)="commit()">{{ saving() ? 'Guardando...' : hasPending() ? 'Reintentar el mismo envío' : 'Importar seleccionados (' + selectedCount() + ')' }}</button>
+    </c-card-body>
+  </c-card>
+}

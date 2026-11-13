@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   AlertComponent,
@@ -57,12 +58,27 @@ export class CategoriesComponent implements OnInit {
   readonly modalVisible = signal(false);
   readonly editingId = signal<string | null>(null);
 
-  readonly topLevelCategories = computed(() => this.categories().filter((c) => !c.parentId));
-
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     type: ['EXPENSE' as TransactionType, [Validators.required]],
     parentId: [''],
+  });
+
+  readonly selectedType = toSignal(this.form.controls.type.valueChanges, { initialValue: this.form.controls.type.value });
+  readonly parentCandidates = computed(() => {
+    const categories = this.categories();
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    return categories.filter((category) => {
+      if (category.type !== this.selectedType()) return false;
+      const visited = new Set<string>();
+      let current: Category | undefined = category;
+      while (current) {
+        if (current.id === this.editingId() || visited.has(current.id)) return false;
+        visited.add(current.id);
+        current = current.parentId ? byId.get(current.parentId) : undefined;
+      }
+      return true;
+    });
   });
 
   constructor(
@@ -112,7 +128,7 @@ export class CategoriesComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
-    const payload = { ...raw, parentId: raw.parentId || undefined };
+    const payload = { ...raw, parentId: raw.parentId || null };
     const editingId = this.editingId();
     const request = editingId
       ? this.categoriesService.update(editingId, payload)

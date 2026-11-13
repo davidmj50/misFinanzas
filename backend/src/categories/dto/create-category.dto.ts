@@ -1,5 +1,5 @@
 import { TransactionType } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -18,6 +18,6 @@ export class CreateCategoryDto {
   color?: string;
 
   @IsOptional()
-  @IsString()
-  parentId?: string;
+  @IsUUID()
+  parentId?: string | null;
 }

@@ -1,5 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import {
   AlertComponent,
@@ -57,6 +59,7 @@ import { localDateString } from '../../core/utils/dates';
     ModalHeaderComponent,
     ModalTitleDirective,
     ReactiveFormsModule,
+    RouterLink,
     RowComponent,
     TableDirective,
   ],
@@ -98,17 +101,20 @@ export class TransactionsComponent implements OnInit {
     notes: [''],
   });
 
-  readonly categoriesForType = computed(() => {
-    const type = this.form.controls.type.value;
-    return this.categories().filter((c) => c.type === type);
-  });
+  readonly selectedType = toSignal(this.form.controls.type.valueChanges, { initialValue: this.form.controls.type.value });
+  readonly categoriesForType = computed(() => this.categories().filter((c) => c.type === this.selectedType()));
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly transactionsService: TransactionsService,
     private readonly accountsService: AccountsService,
     private readonly categoriesService: CategoriesService,
-  ) {}
+  ) {
+    this.form.controls.type.valueChanges.pipe(takeUntilDestroyed()).subscribe((type) => {
+      const category = this.categories().find((c) => c.id === this.form.controls.categoryId.value);
+      if (category && category.type !== type) this.form.controls.categoryId.setValue('');
+    });
+  }
 
   ngOnInit(): void {
     this.accountsService.list().subscribe((accounts) => this.accounts.set(accounts));
@@ -124,7 +130,7 @@ export class TransactionsComponent implements OnInit {
       .list({
         accountId: filters.accountId || undefined,
         categoryId: filters.categoryId || undefined,
-        type: (filters.type || undefined) as TransactionType | undefined,
+        type: (filters.type || undefined) as TransactionType | 'TRANSFER' | undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         search: filters.search || undefined,
@@ -243,7 +249,7 @@ export class TransactionsComponent implements OnInit {
     const baseQuery = {
       accountId: filters.accountId || undefined,
       categoryId: filters.categoryId || undefined,
-      type: (filters.type || undefined) as TransactionType | undefined,
+      type: (filters.type || undefined) as TransactionType | 'TRANSFER' | undefined,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       search: filters.search || undefined,

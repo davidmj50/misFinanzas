@@ -23,6 +23,40 @@ enum UserRole {
   USER
 }
 
+enum RuleField {
+  ANY
+  DESCRIPTION
+  MERCHANT
+}
+
+enum RuleOperator {
+  CONTAINS
+  EQUALS
+  STARTS_WITH
+}
+
+model CategorizationRule {
+  id         String       @id @default(uuid())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  name       String
+  field      RuleField
+  operator   RuleOperator
+  pattern    String
+  priority   Int          @default(100)
+  active     Boolean      @default(true)
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  account    Account?     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([userId, priority])
+  @@index([categoryId])
+  @@index([accountId])
+}
+
 model User {
   id                     String        @id @default(uuid())
   email                  String        @unique
@@ -32,9 +66,15 @@ model User {
   lastMonthlySummaryFor  DateTime?     @db.Date
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
+  expenseDocuments ExpenseDocument[]
+  quickEntryRequests QuickEntryRequest[]
+  documentUploads DocumentUpload[]
+  categorizationRules CategorizationRule[]
   accounts          Account[]
   categories        Category[]
   transactions      Transaction[]
+  transfers         Transfer[]
+  importBatches     ImportBatch[]
   budgets           Budget[]
   recurringPayments RecurringPayment[]
   savingsGoals      SavingsGoal[]
@@ -56,7 +96,45 @@ model Account {
   transactions   Transaction[]
   recurringPayments RecurringPayment[]
 
+  cardProfile       CardProfile? @relation("CardAccount")
+  cardsPaidFrom     CardProfile[] @relation("CardPaymentSource")
+  cardStatements    CardStatement[]
+  categorizationRules CategorizationRule[]
+  outgoingTransfers Transfer[] @relation("TransferSource")
+  incomingTransfers Transfer[] @relation("TransferDestination")
+  importBatches     ImportBatch[]
+
   @@index([userId])
+}
+
+model CardProfile {
+  accountId        String   @id
+  account          Account  @relation("CardAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  creditLimit      Decimal  @db.Decimal(14, 2)
+  closingDay       Int
+  paymentDay       Int
+  paymentAccountId String?
+  paymentAccount   Account? @relation("CardPaymentSource", fields: [paymentAccountId], references: [id], onDelete: SetNull)
+  updatedAt        DateTime @updatedAt
+
+  @@index([paymentAccountId])
+}
+
+model CardStatement {
+  id                 String   @id @default(uuid())
+  cardAccountId      String
+  cardAccount        Account  @relation(fields: [cardAccountId], references: [id], onDelete: Cascade)
+  closingDate        DateTime @db.Date
+  dueDate            DateTime @db.Date
+  plannedPaymentDate DateTime? @db.Date
+  total              Decimal  @db.Decimal(14, 2)
+  minimumPayment     Decimal  @db.Decimal(14, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  payments           Transfer[]
+
+  @@unique([cardAccountId, closingDate])
+  @@index([dueDate])
 }
 
 model Category {
@@ -69,6 +147,7 @@ model Category {
   color        String?
   parent       Category?        @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: SetNull)
   parentId     String?
+  categorizationRules CategorizationRule[]
   subcategories Category[]      @relation("CategoryToSubcategory")
   transactions Transaction[]
   budgets      Budget[]
@@ -98,13 +177,110 @@ model Transaction {
   isRecurring   Boolean          @default(false)
   notes         String?
   externalRef   String?
+  transfer      Transfer?        @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  transferId    String?
+  importBatch   ImportBatch?     @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  importBatchId String?
+  expenseDocuments ExpenseDocument[]
+  quickEntryRequest QuickEntryRequest?
+  documentUploads DocumentUpload[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
   @@unique([userId, externalRef])
+  @@unique([transferId, type])
   @@index([userId, date])
   @@index([accountId])
   @@index([categoryId])
+  @@index([importBatchId])
+}
+
+model QuickEntryRequest {
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId     String @db.Uuid
+  contentHash   String
+  transactionId String? @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@id([userId, requestId])
+}
+
+model ExpenseDocument {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  fileName      String
+  mimeType      String
+  size          Int
+  sha256        String
+  data          Bytes
+  createdAt     DateTime @default(now())
+
+  @@unique([transactionId, sha256])
+  @@index([userId])
+}
+
+model DocumentUpload {
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId     String @db.Uuid
+  contentHash   String
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  documentIds   String[]
+  createdAt     DateTime @default(now())
+
+  @@id([userId, requestId])
+  @@index([transactionId])
+}
+
+model ImportBatch {
+  id            String        @id @default(uuid())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  account       Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId     String
+  requestId     String        @db.Uuid
+  contentHash   String
+  fileName      String
+  total         Int
+  imported      Int
+  skipped       Int
+  createdAt     DateTime      @default(now())
+  transactions  Transaction[]
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+  @@index([accountId])
+}
+
+model Transfer {
+  id                String        @id @default(uuid())
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  fromAccount       Account       @relation("TransferSource", fields: [fromAccountId], references: [id], onDelete: NoAction)
+  fromAccountId     String
+  toAccount         Account       @relation("TransferDestination", fields: [toAccountId], references: [id], onDelete: NoAction)
+  toAccountId       String
+  amount            Decimal       @db.Decimal(14, 2)
+  destinationAmount Decimal       @db.Decimal(14, 2)
+  cardStatementId   String?
+  cardStatement     CardStatement? @relation(fields: [cardStatementId], references: [id], onDelete: NoAction)
+  date              DateTime      @db.Date
+  description       String?
+  requestId         String        @db.Uuid
+  createdAt         DateTime      @default(now())
+  transactions      Transaction[]
+
+  @@unique([userId, requestId])
+  @@index([userId, date])
+  @@index([cardStatementId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
 }
 
 model Budget {

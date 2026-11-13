@@ -1,3 +1,4 @@
+import { PwaStatusComponent } from './core/components/pwa-status.component';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -10,8 +11,8 @@ import { iconSubset } from './icons/icon-subset';
 
 @Component({
   selector: 'app-root',
-  template: '<router-outlet />',
-  imports: [RouterOutlet]
+  template: '<app-pwa-status /><router-outlet />',
+  imports: [RouterOutlet, PwaStatusComponent]
 })
 export class AppComponent implements OnInit {
   title = 'MisFinanzas';

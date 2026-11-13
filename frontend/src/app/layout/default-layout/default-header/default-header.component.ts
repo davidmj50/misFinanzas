@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 /**
  * AppDefaultHeader Component
  *
@@ -51,6 +52,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-default-header',
   templateUrl: './default-header.component.html',
   imports: [
+    RouterLink,
     AvatarComponent,
     BadgeComponent,
     BreadcrumbRouterComponent,

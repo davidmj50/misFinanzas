@@ -1,0 +1,57 @@
+<c-card class="mb-4">
+  <c-card-header><strong>Reglas de categorización</strong></c-card-header>
+  <c-card-body>
+    <p>Completa automáticamente las categorías vacías de tus movimientos importados. Se aplica la primera regla activa que coincida con el tipo de la categoría y la cuenta.</p>
+    <p class="small text-body-secondary">Un número de prioridad menor se evalúa primero. En caso de empate, se usa la regla más antigua. Se ignoran mayúsculas, tildes y espacios repetidos. No cambia movimientos ya guardados.</p>
+    <a routerLink="/imports">Ir a importar movimientos</a>
+    @if (error()) { <c-alert class="mt-3" color="danger" role="alert">{{ error() }}</c-alert> }
+    @if (notice()) { <c-alert class="mt-3" color="success" role="status">{{ notice() }}</c-alert> }
+    @if (!categories().length && !loading()) { <p class="mt-3">Crea una <a routerLink="/categories">categoría</a> antes de añadir reglas.</p> }
+    <form [formGroup]="form" (ngSubmit)="save()" class="mt-3">
+      <h5>{{ editingId() ? 'Editar regla' : 'Nueva regla' }}</h5>
+      <fieldset [disabled]="busy() || loading()" class="row g-3">
+        <div class="col-md-6"><label cLabel for="ruleName">Nombre</label><input cFormControl id="ruleName" formControlName="name" maxlength="100" placeholder="Compras en supermercado" /></div>
+        <div class="col-md-6"><label cLabel for="ruleCategory">Categoría</label><select cSelect id="ruleCategory" formControlName="categoryId"><option value="">Selecciona una categoría</option>@for (category of categories(); track category.id) { <option [value]="category.id">{{ category.name }} ({{ category.type === 'INCOME' ? 'Ingreso' : 'Gasto' }})</option> }</select></div>
+        <div class="col-md-4"><label cLabel for="ruleField">Buscar en</label><select cSelect id="ruleField" formControlName="field"><option value="ANY">Descripción o comercio</option><option value="DESCRIPTION">Descripción</option><option value="MERCHANT">Comercio</option></select></div>
+        <div class="col-md-3"><label cLabel for="ruleOperator">Condición</label><select cSelect id="ruleOperator" formControlName="operator"><option value="CONTAINS">Contiene</option><option value="EQUALS">Es igual a</option><option value="STARTS_WITH">Empieza por</option></select></div>
+        <div class="col-md-5"><label cLabel for="rulePattern">Texto a buscar</label><input cFormControl id="rulePattern" formControlName="pattern" maxlength="200" placeholder="supermercado" /></div>
+        <div class="col-md-6"><label cLabel for="ruleAccount">Cuenta</label><select cSelect id="ruleAccount" formControlName="accountId"><option value="">Todas las cuentas</option>@for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }}{{ account.archived ? ' (archivada)' : '' }}</option> }</select></div>
+        <div class="col-md-3"><label cLabel for="rulePriority">Prioridad (0–9999)</label><input cFormControl id="rulePriority" formControlName="priority" type="number" min="0" max="9999" step="1" /></div>
+        <div class="col-md-3 d-flex align-items-end"><label class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="active" /> Regla activa</label></div>
+        <div class="col-12"><button cButton color="primary" type="submit" [disabled]="form.invalid">{{ busy() ? 'Guardando...' : 'Guardar regla' }}</button>@if (editingId()) { <button cButton color="secondary" type="button" class="ms-2" (click)="cancel()">Cancelar edición</button> }</div>
+      </fieldset>
+    </form>
+  </c-card-body>
+</c-card>
+<c-card class="mb-4">
+  <c-card-header><strong>Reglas guardadas</strong></c-card-header>
+  <c-card-body>
+    @if (loading()) { <p>Cargando...</p> }
+    @else if (!rules().length) { <p>Aún no tienes reglas. Por ejemplo: si Comercio contiene «supermercado», asignar «Alimentación».</p> }
+    @else {
+      <table cTable [responsive]="true" align="middle"><thead><tr><th>Prioridad</th><th>Regla</th><th>Condición</th><th>Categoría</th><th>Cuenta</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+        @for (rule of rules(); track rule.id) {
+          <tr><td>{{ rule.priority }}</td><td>{{ rule.name }}</td><td>{{ fields[rule.field] }} · {{ operators[rule.operator] }} «{{ rule.pattern }}»</td><td>{{ rule.category.name }} ({{ rule.category.type === 'INCOME' ? 'Ingreso' : 'Gasto' }})</td><td>{{ rule.account?.name || 'Todas' }}</td><td>{{ rule.active ? 'Activa' : 'Inactiva' }}</td><td>
+            <button cButton color="secondary" size="sm" [disabled]="busy() || loading()" (click)="edit(rule)">Editar</button>
+            @if (deletingId() === rule.id) { <span class="small ms-2">¿Eliminar?</span><button cButton color="danger" size="sm" class="ms-2" [disabled]="busy()" (click)="remove(rule)">Confirmar</button><button cButton color="secondary" size="sm" class="ms-2" [disabled]="busy()" (click)="deletingId.set(null)">Cancelar</button> }
+            @else { <button cButton color="danger" size="sm" variant="outline" class="ms-2" [disabled]="busy() || loading()" (click)="deletingId.set(rule.id)">Eliminar</button> }
+          </td></tr>
+        }
+      </tbody></table>
+    }
+  </c-card-body>
+</c-card>
+<c-card>
+  <c-card-header><strong>Probar reglas guardadas</strong></c-card-header>
+  <c-card-body>
+    <p>Comprueba qué regla se aplicaría sin guardar ningún movimiento.</p>
+    <form [formGroup]="testForm" (ngSubmit)="test()"><fieldset [disabled]="testing() || busy() || loading()" class="row g-3">
+      <div class="col-md-6"><label cLabel for="testAccount">Cuenta de prueba</label><select cSelect id="testAccount" formControlName="accountId"><option value="">Selecciona una cuenta</option>@for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }}</option> }</select></div>
+      <div class="col-md-6"><label cLabel for="testType">Tipo de movimiento</label><select cSelect id="testType" formControlName="type"><option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option></select></div>
+      <div class="col-md-6"><label cLabel for="testDescription">Descripción de prueba</label><input cFormControl id="testDescription" formControlName="description" maxlength="500" /></div>
+      <div class="col-md-6"><label cLabel for="testMerchant">Comercio de prueba</label><input cFormControl id="testMerchant" formControlName="merchant" maxlength="200" /></div>
+      <div class="col-12"><button cButton color="primary" variant="outline" type="submit" [disabled]="testForm.invalid">{{ testing() ? 'Probando...' : 'Probar reglas' }}</button></div>
+    </fieldset></form>
+    @if (testResult(); as result) { <c-alert class="mt-3" [color]="result.matchedRule ? 'success' : 'info'" role="status">{{ result.matchedRule ? 'Categoría: ' + result.categoryName + ' · Regla: ' + result.matchedRule.name : 'Sin coincidencias. El movimiento quedaría sin categoría.' }}</c-alert> }
+  </c-card-body>
+</c-card>

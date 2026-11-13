@@ -6,6 +6,7 @@
         <button cButton color="primary" size="sm" (click)="openCreate()">+ Nueva cuenta</button>
       </c-card-header>
       <c-card-body>
+        <a routerLink="/planning" class="d-inline-block mb-3">Control de tarjetas y proyección de saldo</a>
         @if (errorMessage()) {
           <c-alert color="danger">{{ errorMessage() }}</c-alert>
         }

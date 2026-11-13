@@ -1,12 +1,10 @@
 name: Deploy frontend (Netlify)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend.yml"
-  workflow_dispatch: {}
+  workflow_call:
+    secrets:
+      NETLIFY_AUTH_TOKEN:
+        required: true
 
 jobs:
   deploy:

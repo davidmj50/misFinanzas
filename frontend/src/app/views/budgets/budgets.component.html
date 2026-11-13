@@ -2,7 +2,7 @@
   <c-col xs="12">
     <c-card class="mb-4">
       <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Presupuestos del mes</strong>
+        <strong>Presupuestos del mes (COP)</strong>
         <button cButton color="primary" size="sm" (click)="openCreate()" [disabled]="availableCategories().length === 0">
           + Nuevo presupuesto
         </button>
@@ -68,7 +68,7 @@
           </select>
         </c-col>
         <c-col xs="12">
-          <label cLabel for="amount">Monto mensual</label>
+          <label cLabel for="amount">Monto mensual (COP)</label>
           <input cFormControl formControlName="amount" id="amount" step="0.01" type="number" />
         </c-col>
       </c-row>

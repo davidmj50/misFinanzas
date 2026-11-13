@@ -3,8 +3,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { dateKey, monthRange } from '../common/dates.js';
 import { EmailService } from '../email/email.service.js';
 import { AccountsService } from '../accounts/accounts.service.js';
+import { escapeHtml } from '../email/escape-html.js';
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
+const money = (n: number, currency = 'COP') => `${n.toLocaleString('es-CO', { maximumFractionDigits: 2 })} ${escapeHtml(currency)}`;
 
 @Injectable()
 export class MonthlySummaryService {
@@ -47,17 +48,19 @@ export class MonthlySummaryService {
     const userId = user.id;
 
     const totals = await this.prisma.transaction.groupBy({
-      by: ['type'],
-      where: { userId, date: { gte: targetStart, lt: targetEnd } },
+      by: ['type', 'currency'],
+      where: { userId, transferId: null, date: { gte: targetStart, lt: targetEnd } },
       _sum: { amount: true },
     });
-    const totalIncome = Number(totals.find((t) => t.type === 'INCOME')?._sum.amount ?? 0);
-    const totalExpense = Number(totals.find((t) => t.type === 'EXPENSE')?._sum.amount ?? 0);
-    const net = totalIncome - totalExpense;
+    const currencyTotals = [...new Set(totals.map((t) => t.currency))].sort().map((currency) => {
+      const income = Number(totals.find((t) => t.currency === currency && t.type === 'INCOME')?._sum.amount ?? 0);
+      const expense = Number(totals.find((t) => t.currency === currency && t.type === 'EXPENSE')?._sum.amount ?? 0);
+      return `<p>Ingresos: <strong>${money(income, currency)}</strong><br/>Gastos: <strong>${money(expense, currency)}</strong><br/>Balance: <strong>${money(income - expense, currency)}</strong></p>`;
+    }).join('') || '<p>Sin movimientos en el mes.</p>';
 
     const byCategory = await this.prisma.transaction.groupBy({
-      by: ['categoryId'],
-      where: { userId, type: 'EXPENSE', date: { gte: targetStart, lt: targetEnd } },
+      by: ['categoryId', 'currency'],
+      where: { userId, type: 'EXPENSE', transferId: null, date: { gte: targetStart, lt: targetEnd } },
       _sum: { amount: true },
     });
     const categoryIds = byCategory.map((c) => c.categoryId).filter((id): id is string => id !== null);
@@ -69,9 +72,9 @@ export class MonthlySummaryService {
       .map((c) => ({
         name: (c.categoryId && categoryNameMap.get(c.categoryId)) || 'Sin categoría',
         total: Number(c._sum.amount ?? 0),
+        currency: c.currency,
       }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
+      .sort((a, b) => a.currency.localeCompare(b.currency) || b.total - a.total);
 
     const budgets = await this.prisma.budget.findMany({ where: { userId }, include: { category: true } });
     let budgetSpentMap = new Map<string, number>();
@@ -81,6 +84,8 @@ export class MonthlySummaryService {
         where: {
           userId,
           type: 'EXPENSE',
+          currency: 'COP',
+          transferId: null,
           categoryId: { in: budgets.map((b) => b.categoryId) },
           date: { gte: targetStart, lt: targetEnd },
         },
@@ -103,7 +108,7 @@ export class MonthlySummaryService {
     const rows = (items: string[]) => (items.length ? items.join('') : '<tr><td colspan="3">Sin datos.</td></tr>');
 
     const topCategoriesRows = rows(
-      topCategories.map((c) => `<tr><td>${c.name}</td><td align="right">${money(c.total)}</td></tr>`),
+      topCategories.map((c) => `<tr><td>${escapeHtml(c.name)}</td><td align="right">${money(c.total, c.currency)}</td></tr>`),
     );
 
     const budgetRows = rows(
@@ -111,7 +116,7 @@ export class MonthlySummaryService {
         const spent = budgetSpentMap.get(b.categoryId) ?? 0;
         const amount = Number(b.amount);
         const pct = amount > 0 ? Math.round((spent / amount) * 100) : 0;
-        return `<tr><td>${b.category.name}</td><td align="right">${money(spent)} / ${money(amount)}</td><td align="right">${pct}%</td></tr>`;
+        return `<tr><td>${escapeHtml(b.category.name)}</td><td align="right">${money(spent)} / ${money(amount)}</td><td align="right">${pct}%</td></tr>`;
       }),
     );
 
@@ -124,22 +129,18 @@ export class MonthlySummaryService {
         const targetAmount = Number(g.targetAmount);
         const pct = targetAmount > 0 ? Math.round((totalSaved / targetAmount) * 100) : 0;
         const monthDelta = contributedThisMonth !== 0 ? money(contributedThisMonth) : '-';
-        return `<tr><td>${g.name}</td><td align="right">${monthDelta}</td><td align="right">${money(totalSaved)} / ${money(targetAmount)} (${pct}%)</td></tr>`;
+        return `<tr><td>${escapeHtml(g.name)}</td><td align="right">${monthDelta}</td><td align="right">${money(totalSaved)} / ${money(targetAmount)} (${pct}%)</td></tr>`;
       }),
     );
 
     const accountRows = rows(
-      accounts.map((a) => `<tr><td>${a.name}</td><td align="right">${money(a.balance ?? 0)}</td></tr>`),
+      accounts.map((a) => `<tr><td>${escapeHtml(a.name)}</td><td align="right">${money(a.balance ?? 0, a.currency)}</td></tr>`),
     );
 
     return `
       <h2>Resumen de ${monthLabel}</h2>
-      <p>Hola ${user.name}, así te fue el mes pasado:</p>
-      <p>
-        Ingresos: <strong>${money(totalIncome)}</strong><br/>
-        Gastos: <strong>${money(totalExpense)}</strong><br/>
-        Balance: <strong>${money(net)}</strong>
-      </p>
+      <p>Hola ${escapeHtml(user.name)}, así te fue el mes pasado:</p>
+      ${currencyTotals}
 
       <h3>Principales categorías de gasto</h3>
       <table cellpadding="4">${topCategoriesRows}</table>

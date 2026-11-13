@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { dateKey, monthRange } from '../common/dates.js';
 import { EmailService } from '../email/email.service.js';
+import { escapeHtml } from '../email/escape-html.js';
 import { CreateBudgetDto } from './dto/create-budget.dto.js';
 import { UpdateBudgetDto } from './dto/update-budget.dto.js';
 
@@ -70,7 +71,7 @@ export class BudgetsService {
 
     const spentByCategory = await this.prisma.transaction.groupBy({
       by: ['categoryId'],
-      where: { userId, type: 'EXPENSE', categoryId: { in: categoryIds }, date: { gte: monthStart, lt: monthEnd } },
+      where: { userId, type: 'EXPENSE', currency: 'COP', transferId: null, categoryId: { in: categoryIds }, date: { gte: monthStart, lt: monthEnd } },
       _sum: { amount: true },
     });
     return new Map(
@@ -111,8 +112,8 @@ export class BudgetsService {
           ? `Presupuesto superado: ${budget.category.name}`
           : `Presupuesto de ${budget.category.name} al ${percentage}%`;
       const html = `
-        <p>Hola ${budget.user.name},</p>
-        <p>Tu presupuesto de <strong>${budget.category.name}</strong> lleva <strong>$${spentLabel}</strong> de <strong>$${amount}</strong> este mes (<strong>${percentage}%</strong>).</p>
+        <p>Hola ${escapeHtml(budget.user.name)},</p>
+        <p>Tu presupuesto de <strong>${escapeHtml(budget.category.name)}</strong> lleva <strong>${spentLabel} COP</strong> de <strong>${amount} COP</strong> este mes (<strong>${percentage}%</strong>).</p>
         <p>— MisFinanzas</p>
       `;
 
