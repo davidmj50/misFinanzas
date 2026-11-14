@@ -41,6 +41,7 @@ import { navItems } from './_nav';
 })
 export class DefaultLayoutComponent {
   private readonly authService = inject(AuthService);
+  constructor() { this.authService.refreshUser().subscribe({ error: () => undefined }); }
   focusContent() { document.getElementById('main-content')?.focus(); }
   public navItems = navItems.filter((item) => item.url !== '/users' || this.authService.isAdmin());
 }

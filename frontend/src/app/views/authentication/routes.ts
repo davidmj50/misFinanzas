@@ -15,7 +15,7 @@ export const routes: Routes = [
         loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent),
         data: { title: 'Registro' },
       },
-      // Las pantallas de contraseña de la plantilla no implementan una recuperación real.
+      ...['forgot-password', 'reset-password', 'verify-email'].map(mode => ({ path: mode, loadComponent: () => import('./recovery/recovery.component').then(m => m.RecoveryComponent), data: { mode, title: 'Seguridad de tu cuenta' } })),
       { path: '**', redirectTo: 'login' },
     ],
   },

@@ -1,0 +1,161 @@
+<div class="auth-layout">
+  <aside class="auth-brand" aria-label="Acerca de MisFinanzas">
+    <app-auth-brand />
+  </aside>
+  <main class="auth-form-panel">
+    <div class="auth-form-content">
+      <header class="auth-form-heading">
+        <span class="eyebrow">Cuenta y seguridad</span>
+        <h1>{{ title }}</h1>
+        <p>
+          {{
+            mode === 'forgot-password'
+              ? 'Te enviaremos un enlace para elegir una nueva contraseña.'
+              : mode === 'reset-password'
+                ? 'Tu nueva contraseña cerrará las sesiones anteriores de tu cuenta.'
+                : 'Confirma que este correo te pertenece para proteger el acceso a tu cuenta.'
+          }}
+        </p>
+      </header>
+      @if (error()) {
+        <div class="alert alert-danger" role="alert">{{ error() }}</div>
+      }
+      @if (done()) {
+        <div class="alert alert-success" role="status">{{ message() }}</div>
+      } @else if (mode !== 'forgot-password' && !validToken) {
+        <div class="alert alert-warning" role="alert">
+          El enlace está incompleto o no es válido. Abre de nuevo el enlace de
+          tu correo.
+        </div>
+      } @else if (mode === 'forgot-password') {
+        <form
+          class="auth-form"
+          [formGroup]="emailForm"
+          (ngSubmit)="submit()"
+          novalidate
+        >
+          <div>
+            <label class="form-label" for="recovery-email"
+              >Correo electrónico</label
+            ><input
+              class="form-control"
+              id="recovery-email"
+              formControlName="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              required
+              [attr.aria-invalid]="
+                emailForm.controls.email.touched &&
+                emailForm.controls.email.invalid
+              "
+            />
+            @if (emailForm.controls.email.touched && emailForm.invalid) {
+              <p class="field-error">Escribe un correo electrónico válido.</p>
+            }
+          </div>
+          <button
+            class="btn btn-primary auth-submit"
+            type="submit"
+            [disabled]="busy()"
+          >
+            {{ busy() ? 'Enviando...' : 'Enviar enlace de recuperación' }}
+          </button>
+        </form>
+      } @else if (mode === 'reset-password') {
+        <form
+          class="auth-form"
+          [formGroup]="passwordForm"
+          (ngSubmit)="submit()"
+          novalidate
+        >
+          <div>
+            <label class="form-label" for="reset-password"
+              >Nueva contraseña</label
+            ><input
+              class="form-control"
+              id="reset-password"
+              formControlName="newPassword"
+              type="password"
+              autocomplete="new-password"
+              required
+              aria-describedby="reset-help"
+              [attr.aria-invalid]="
+                passwordForm.controls.newPassword.touched &&
+                passwordForm.controls.newPassword.invalid
+              "
+            />
+            <p
+              id="reset-help"
+              class="field-help"
+              [class.field-error]="
+                passwordForm.controls.newPassword.touched &&
+                passwordForm.controls.newPassword.invalid
+              "
+            >
+              Usa una frase de al menos 15 caracteres. Si es demasiado larga,
+              acórtala.
+            </p>
+          </div>
+          <div>
+            <label class="form-label" for="reset-confirm"
+              >Repetir contraseña</label
+            ><input
+              class="form-control"
+              id="reset-confirm"
+              formControlName="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              required
+              [attr.aria-invalid]="
+                passwordForm.controls.confirmPassword.touched &&
+                (passwordForm.hasError('passwordMismatch') ||
+                  passwordForm.controls.confirmPassword.invalid)
+              "
+            />
+            @if (
+              passwordForm.controls.confirmPassword.touched &&
+              (passwordForm.hasError('passwordMismatch') ||
+                passwordForm.controls.confirmPassword.invalid)
+            ) {
+              <p class="field-error">Las contraseñas deben coincidir.</p>
+            }
+          </div>
+          <button
+            class="btn btn-primary auth-submit"
+            type="submit"
+            [disabled]="busy()"
+          >
+            {{ busy() ? 'Guardando...' : 'Guardar nueva contraseña' }}
+          </button>
+        </form>
+      } @else {
+        <button
+          class="btn btn-primary auth-submit"
+          type="button"
+          (click)="submit()"
+          [disabled]="busy()"
+        >
+          {{ busy() ? 'Verificando...' : 'Confirmar mi correo' }}
+        </button>
+      }
+      <p class="auth-switch">
+        <a routerLink="/authentication/login">Volver a ingresar</a>
+      </p>
+      @if (mode === 'reset-password') {
+        <p class="auth-switch">
+          <a routerLink="/authentication/forgot-password"
+            >Solicitar otro enlace</a
+          >
+        </p>
+      }
+      @if (mode === 'verify-email') {
+        <p class="auth-switch">
+          <a routerLink="/account-security"
+            >Ir a mi cuenta o solicitar otro enlace</a
+          >
+        </p>
+      }
+    </div>
+  </main>
+</div>

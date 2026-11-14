@@ -17,6 +17,7 @@ export const routes: Routes = [
       title: 'Inicio'
     },
     children: [
+      { path: 'account-security', loadComponent: () => import('./views/account-security/account-security.component').then(m => m.AccountSecurityComponent), data: { title: 'Cuenta y seguridad' } },
       {
         path: 'dashboard',
         loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes)

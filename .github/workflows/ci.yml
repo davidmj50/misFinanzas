@@ -47,6 +47,7 @@ jobs:
       RUN_RULE_DB_TESTS: "true"
       RUN_PLANNING_DB_TESTS: "true"
       RUN_DOCUMENT_DB_TESTS: "true"
+      RUN_ACCOUNT_SECURITY_DB_TESTS: "true"
       RUN_QUICK_ENTRY_DB_TESTS: "true"
 
     steps:

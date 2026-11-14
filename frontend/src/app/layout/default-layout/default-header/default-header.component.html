@@ -14,6 +14,7 @@
     </button>
     <ul cDropdownMenu>
       <li><h6 cDropdownHeader class="fw-semibold">{{ currentUser()?.name ?? 'Mi cuenta' }}</h6></li>
+      <li><a routerLink="/account-security" cDropdownItem>Cuenta y seguridad</a></li>
       <li><hr cDropdownDivider /></li>
       <li><button type="button" (click)="logout()" cDropdownItem><svg cIcon class="me-2" name="cilAccountLogout"></svg>Cerrar sesión</button></li>
     </ul>

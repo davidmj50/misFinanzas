@@ -36,11 +36,23 @@ export class AuthService {
     );
   }
 
+  updateUser(user: AuthUser) {
+    if (!this.isAuthenticated() || user.id !== this.currentUser()?.id) return;
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    this.currentUserSignal.set(user);
+  }
+
+  refreshUser() {
+    return this.http.get<AuthUser>(`${environment.apiUrl}/auth/me`).pipe(tap(user => this.updateUser(user)));
+  }
+
   logout(clearDrafts = true, returnUrl?: string) {
+    const token = this.getToken();
     if (clearDrafts) this.drafts.clearAll();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.currentUserSignal.set(null);
+    if (clearDrafts && token) this.http.post(`${environment.apiUrl}/auth/logout`, {}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({ error: () => undefined });
     if (returnUrl) this.router.navigate(['/authentication/login'], { queryParams: { returnUrl: safeReturnUrl(returnUrl) } });
     else this.router.navigate(['/authentication/login']);
   }

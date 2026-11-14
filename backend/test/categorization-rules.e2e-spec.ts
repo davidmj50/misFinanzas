@@ -1,3 +1,4 @@
+import { testToken } from './auth-session.js';
 import { randomUUID } from 'node:crypto';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -36,7 +37,7 @@ describe.runIf(process.env.RUN_RULE_DB_TESTS === 'true')('Reglas: API, importaci
     await app.init(); prisma = app.get(PrismaService);
     await prisma.user.createMany({ data: [owner, other].map(id => ({ id, email: `${id}@import.test`, name: 'Import test', passwordHash: 'unused' })) });
     foreign = await prisma.account.create({ data: { userId: other, name: 'Ajena', type: 'BANK' } });
-    token = app.get(JwtService).sign({ sub: owner });
+    token = await testToken(prisma, app.get(JwtService), owner);
   });
   beforeEach(async () => {
     await prisma.categorizationRule.deleteMany({ where: { userId: owner } });

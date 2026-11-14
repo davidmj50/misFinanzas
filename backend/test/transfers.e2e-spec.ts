@@ -1,3 +1,4 @@
+import { testToken } from './auth-session.js';
 import { randomUUID } from 'node:crypto';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -35,8 +36,8 @@ describe.runIf(runDatabaseTests)('Transferencias: API y PostgreSQL', () => {
     prisma = app.get(PrismaService);
     await prisma.user.createMany({ data: [owner, otherUser].map(id => ({ id, email: `${id}@test.local`, passwordHash: 'unused-test-hash', name: 'Transfer test' })) });
     const jwt = app.get(JwtService);
-    token = jwt.sign({ sub: owner });
-    otherToken = jwt.sign({ sub: otherUser });
+    token = await testToken(prisma, jwt, owner);
+    otherToken = await testToken(prisma, jwt, otherUser);
   });
 
   beforeEach(async () => {

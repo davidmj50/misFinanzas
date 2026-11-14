@@ -1,0 +1,117 @@
+.security-page {
+  max-width: 1100px;
+  margin-inline: auto;
+}
+.security-intro {
+  margin-bottom: 1.75rem;
+  p {
+    color: var(--cui-secondary-color);
+    max-width: 65ch;
+  }
+}
+.security-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.security-card {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--cui-border-color);
+  border-radius: 0.875rem;
+  background: var(--mf-surface);
+  min-width: 0;
+  h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+  }
+  p {
+    color: var(--cui-secondary-color);
+  }
+}
+.security-wide {
+  grid-column: 1 / -1;
+}
+.security-form {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  .form-label {
+    font-weight: 600;
+  }
+}
+.security-details {
+  margin-block: 1.5rem;
+  dt {
+    font-size: 0.8rem;
+    color: var(--cui-secondary-color);
+  }
+  dd {
+    margin-bottom: 1rem;
+    overflow-wrap: anywhere;
+  }
+}
+.security-status {
+  display: inline-flex;
+  border-radius: 2rem;
+  background: var(--cui-tertiary-bg);
+  padding: 0.3rem 0.7rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+.security-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  border-bottom: 1px solid var(--cui-border-color);
+  p {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+  }
+  strong {
+    overflow-wrap: anywhere;
+  }
+}
+.session-current {
+  color: var(--cui-primary);
+  font-size: 0.8rem;
+  display: inline-block;
+  margin-left: 0.6rem;
+}
+.security-bulk {
+  margin-top: 2rem;
+  max-width: 34rem;
+}
+.security-notice {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 0.5rem;
+}
+[data-coreui-theme='dark'] .security-page {
+  .session-current {
+    color: #a7bcff;
+  }
+  .btn-outline-danger {
+    --cui-btn-color: #ff9bb1;
+    --cui-btn-border-color: #cc738c;
+    --cui-btn-hover-color: #101827;
+    --cui-btn-hover-bg: #ff9bb1;
+    --cui-btn-hover-border-color: #ff9bb1;
+    --cui-btn-active-color: #101827;
+    --cui-btn-active-bg: #ff9bb1;
+    --cui-btn-active-border-color: #ff9bb1;
+    --cui-btn-disabled-color: #ff9bb1;
+  }
+}
+@media (max-width: 767px) {
+  .security-grid {
+    grid-template-columns: 1fr;
+  }
+  .security-session {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

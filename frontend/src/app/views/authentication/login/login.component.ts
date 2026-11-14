@@ -18,6 +18,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginComponent {
   private readonly route = inject(ActivatedRoute);
+  readonly passwordChanged = this.route.snapshot.queryParamMap.get('passwordChanged') === '1';
   readonly showPassword = signal(false);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);

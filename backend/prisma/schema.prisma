@@ -57,7 +57,48 @@ model CategorizationRule {
   @@index([accountId])
 }
 
+enum AuthLinkPurpose {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+model AccountSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authVersion Int
+  label       String
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+
+  @@index([userId, revokedAt, expiresAt])
+}
+
+model AuthLink {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose         AuthLinkPurpose
+  tokenHash       String          @unique
+  email           String
+  authVersion     Int
+  expiresAt       DateTime
+  consumedAt      DateTime?
+  issuedAt        DateTime        @default(now())
+  windowStartedAt DateTime        @default(now())
+  sentInWindow    Int             @default(1)
+
+  @@unique([userId, purpose])
+  @@index([expiresAt])
+}
+
 model User {
+  authVersion Int @default(0)
+  emailVerifiedAt DateTime?
+  sessions AccountSession[]
+  authLinks AuthLink[]
   id                     String        @id @default(uuid())
   email                  String        @unique
   passwordHash           String

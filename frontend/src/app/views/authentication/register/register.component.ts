@@ -1,3 +1,4 @@
+import { newPasswordValidator } from '../../../core/utils/password-policy';
 import { Component, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -21,7 +22,7 @@ export class RegisterComponent {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, newPasswordValidator]],
   });
 
   constructor(
@@ -40,7 +41,7 @@ export class RegisterComponent {
     this.errorMessage.set(null);
 
     this.authService.register(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => this.router.navigate(['/account-security']),
       error: (err) => {
         this.errorMessage.set(err.error?.message ?? 'No se pudo crear la cuenta.');
         this.loading.set(false);

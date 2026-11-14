@@ -1,3 +1,4 @@
+import { testToken } from './auth-session.js';
 import { randomUUID } from 'node:crypto';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -23,7 +24,7 @@ describe.runIf(process.env.RUN_QUICK_ENTRY_DB_TESTS === 'true')('Registro rápid
     app = module.createNestApplication(); app.useLogger(false); app.setGlobalPrefix('api'); app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     await app.init(); prisma = app.get(PrismaService);
     await prisma.user.createMany({ data: [owner,other].map(id => ({ id, email: `${id}@quick.test`, name: 'Quick test', passwordHash: 'unused' })) });
-    foreign = await prisma.account.create({ data: { userId: other, name: 'Ajena', type: 'BANK' } }); token = app.get(JwtService).sign({ sub: owner });
+    foreign = await prisma.account.create({ data: { userId: other, name: 'Ajena', type: 'BANK' } }); token = await testToken(prisma, app.get(JwtService), owner);
   });
   beforeEach(async () => {
     await prisma.account.deleteMany({ where: { userId: owner } }); await prisma.quickEntryRequest.deleteMany({ where: { userId: owner } });

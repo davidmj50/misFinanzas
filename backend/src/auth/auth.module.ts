@@ -1,3 +1,7 @@
+import { AuthHeadersInterceptor } from './auth-headers.interceptor.js';
+import { EmailModule } from '../email/email.module.js';
+import { AccountSecurityController } from './account-security.controller.js';
+import { sessionTtlSeconds } from './security-utils.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -10,12 +14,12 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
 @Module({
   imports: [
     PassportModule.register({}),
+    EmailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const raw = config.get<string>('JWT_EXPIRES_IN_SECONDS');
-        const expiresIn = raw ? Number(raw) : 60 * 60 * 24 * 7;
+        const expiresIn = sessionTtlSeconds(config);
         return {
           secret: config.getOrThrow<string>('JWT_SECRET'),
           signOptions: { expiresIn },
@@ -23,8 +27,8 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
       },
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  controllers: [AuthController, AccountSecurityController],
+  providers: [AuthHeadersInterceptor, AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

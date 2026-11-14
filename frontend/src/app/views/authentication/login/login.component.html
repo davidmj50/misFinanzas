@@ -4,6 +4,7 @@
     <div class="auth-mobile-brand brand-lockup"><img src="assets/pwa/icon-192.png" width="42" height="42" alt="" /><div class="brand-copy"><strong>MisFinanzas</strong><small>Tu espacio financiero</small></div></div>
     <header class="auth-form-heading"><span class="eyebrow">Bienvenido de nuevo</span><h1>Ingresa a tu cuenta</h1><p>Tus cuentas, tus movimientos y tus próximos planes. Continúa donde lo dejaste.</p></header>
     @if (errorMessage()) { <c-alert color="danger" role="alert">{{ errorMessage() }}</c-alert> }
+    @if (passwordChanged) { <c-alert color="success" role="status">Contraseña actualizada. Ingresa con tu nueva contraseña.</c-alert> }
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div>
         <label class="form-label" for="email">Correo electrónico</label>
@@ -17,6 +18,7 @@
       </div>
       <button class="btn btn-primary auth-submit" type="submit" [disabled]="loading()" [attr.aria-busy]="loading()"><span>{{ loading() ? 'Ingresando...' : 'Ingresar' }}</span><span aria-hidden="true">→</span></button>
     </form>
+    <p class="auth-switch"><a routerLink="/authentication/forgot-password">Olvidé mi contraseña</a></p>
     <p class="auth-switch">¿Aún no tienes una cuenta? <a routerLink="/authentication/register">Crear mi cuenta</a></p>
     <div class="auth-install"><span>Siempre a tu alcance.</span><a routerLink="/install">Añadir al celular ↗</a></div>
     <p class="auth-form-footer">MisFinanzas · Un solo lugar para organizarte mejor.</p>

@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  emailVerifiedAt?: string | null;
 }
 
 export interface AuthResponse {

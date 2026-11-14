@@ -23,4 +23,19 @@ describe('Peticiones privadas en la aplicación instalable', () => {
     TestBed.runInInjectionContext(() => authInterceptor(new HttpRequest('GET', environment.apiUrl + '/accounts'), next)).subscribe({ error: () => {} });
     expect(auth.logout).toHaveBeenCalledWith(false, '/quick-entry');
   });
+  it('no envía credenciales ni cierra sesión por errores de autenticación pública', () => {
+    const auth=setup();
+    for (const path of ['login','register','password/forgot','password/reset','email/verify']) {
+      const next=vi.fn((_request:HttpRequest<unknown>)=>throwError(()=>new HttpErrorResponse({status:401})));
+      TestBed.runInInjectionContext(()=>authInterceptor(new HttpRequest('POST',environment.apiUrl+'/auth/'+path,{}),next)).subscribe({error:()=>{}});
+      expect(next.mock.calls[0][0].headers.has('Authorization')).toBe(false);
+    }
+    expect(auth.logout).not.toHaveBeenCalled();
+  });
+  it('una petición vieja no cierra una sesión que acaba de renovarse', () => {
+    const auth=setup();let current='old';auth.getToken=()=>current;
+    const next=()=>{current='new';return throwError(()=>new HttpErrorResponse({status:401}));};
+    TestBed.runInInjectionContext(()=>authInterceptor(new HttpRequest('GET',environment.apiUrl+'/accounts'),next)).subscribe({error:()=>{}});
+    expect(auth.logout).not.toHaveBeenCalled();
+  });
 });

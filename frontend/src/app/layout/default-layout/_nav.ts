@@ -18,6 +18,7 @@ export const navItems: INavData[] = [
   { name: 'Categorías', url: '/categories', iconComponent: { name: 'cil-tags' } },
   { name: 'Reglas de categorización', url: '/categorization-rules', iconComponent: { name: 'cil-task' } },
   { title: true, name: 'Tu aplicación' },
+  { name: 'Cuenta y seguridad', url: '/account-security', iconComponent: { name: 'cil-lock-locked' } },
   { name: 'Registro rápido', url: '/quick-entry', iconComponent: { name: 'cil-pencil' } },
   { name: 'Instalar en el celular', url: '/install', iconComponent: { name: 'cil-cloud-download' } },
   { name: 'Usuarios', url: '/users', iconComponent: { name: 'cil-people' } },

@@ -11,18 +11,35 @@ export class EmailService {
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('RESEND_API_KEY');
     this.resend = apiKey ? new Resend(apiKey) : null;
-    this.from = this.config.get<string>('EMAIL_FROM') ?? 'MisFinanzas <onboarding@resend.dev>';
+    this.from =
+      this.config.get<string>('EMAIL_FROM') ??
+      'MisFinanzas <onboarding@resend.dev>';
+  }
+
+  isConfigured(): boolean {
+    return this.resend !== null;
   }
 
   async send(to: string, subject: string, html: string): Promise<boolean> {
     if (!this.resend) {
-      this.logger.warn(`RESEND_API_KEY no configurado; no se envió el correo "${subject}" a ${to}`);
+      this.logger.warn('Envío de correo no disponible: falta configuración.');
       return false;
     }
 
-    const { error } = await this.resend.emails.send({ from: this.from, to, subject, html });
+    let error;
+    try {
+      ({ error } = await this.resend.emails.send({
+        from: this.from,
+        to,
+        subject,
+        html,
+      }));
+    } catch {
+      this.logger.error('No se pudo entregar el correo al proveedor.');
+      return false;
+    }
     if (error) {
-      this.logger.error(`Error enviando correo a ${to}: ${error.message}`);
+      this.logger.error('El proveedor no aceptó el correo.');
       return false;
     }
     return true;

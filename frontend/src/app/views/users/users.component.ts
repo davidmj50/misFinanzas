@@ -1,3 +1,4 @@
+import { newPasswordValidator } from '../../core/utils/password-policy';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -104,7 +105,7 @@ export class UsersComponent implements OnInit {
   openCreate() {
     this.editingId.set(null);
     this.form.reset({ name: '', email: '', password: '', role: 'USER' });
-    this.form.controls.password.setValidators([Validators.required, Validators.minLength(8)]);
+    this.form.controls.password.setValidators([Validators.required, newPasswordValidator]);
     this.form.controls.password.updateValueAndValidity();
     this.modalVisible.set(true);
   }
@@ -112,7 +113,7 @@ export class UsersComponent implements OnInit {
   openEdit(user: ManagedUser) {
     this.editingId.set(user.id);
     this.form.reset({ name: user.name, email: user.email, password: '', role: user.role });
-    this.form.controls.password.setValidators([Validators.minLength(8)]);
+    this.form.controls.password.setValidators([newPasswordValidator]);
     this.form.controls.password.updateValueAndValidity();
     this.modalVisible.set(true);
   }

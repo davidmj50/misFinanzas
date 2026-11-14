@@ -7,7 +7,7 @@ Backoffice personal para llevar el control de ingresos y gastos (cuenta bancaria
 
 ## Funcionalidad
 
-- Registro/login de usuario (JWT).
+- Registro/login con sesiones revocables, recuperación de contraseña y verificación de correo.
 - Cuentas: cuentas bancarias, tarjetas de crédito o efectivo.
 - Categorías de ingreso/gasto (con subcategorías).
 - Transacciones: monto, tipo, cuenta, categoría, comercio, método de pago, etiquetas, notas, recurrencia.
@@ -329,3 +329,34 @@ La migración crea QuickEntryRequest, índices, relaciones y RLS sin políticas 
 CI verifica el artefacto PWA tras compilar y activa las diez pruebas de API nuevas con `RUN_QUICK_ENTRY_DB_TESTS=true`, exclusivamente contra PostgreSQL local. Se verifican idempotencia, concurrencia, propiedad, moneda, validación, borrado y atomicidad. Las pruebas del frontend cubren borradores, aislamiento por usuario, sesión, instalación, actualizaciones y reintentos. La prueba integral usa Edge con el service worker real, frontend de producción y API/base temporal: apertura sin conexión, recarga, respuesta perdida, actualización con borrador y retorno tras iniciar sesión. La guía iPhone se comprobó con agente de usuario simulado; la instalación final se confirma en un teléfono físico tras publicar.
 
 Referencias: [service workers en Angular](https://angular.dev/ecosystem/service-workers/getting-started), [configuración de caché](https://angular.dev/ecosystem/service-workers/config), [actualizaciones](https://angular.dev/ecosystem/service-workers/communications), [ngsw-bypass y despliegue](https://angular.dev/ecosystem/service-workers/devops), [accesos rápidos del manifest](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/shortcuts), [añadir una app web en iPhone](https://support.apple.com/en-lamr/guide/iphone/iphea86e5236/ios).
+
+
+## Cuenta y seguridad
+
+La pantalla **Cuenta y seguridad** está disponible en el menú y en el menú de usuario. Incluye el estado del correo, reenvío de verificación, cambio de contraseña y las sesiones abiertas. El registro dirige a esta pantalla. Las cuentas anteriores pueden seguir usando sus finanzas mientras verifican su correo.
+
+### Activación en producción
+
+1. Aplicar la migración `20261114093000_add_account_security` con `npm run prisma:deploy` desde el backend, usando la conexión de migraciones ya configurada. No basta con publicar solamente el frontend. La migración añade dos tablas con RLS habilitado, sin políticas públicas, y dos columnas a User; conserva usuarios y movimientos existentes.
+2. Configurar en el backend `FRONTEND_URL=https://misfinanzas-qr9v.netlify.app`, `RESEND_API_KEY` y `EMAIL_FROM` con un remitente de un dominio verificado en Resend. FRONTEND_URL debe ser el origen de confianza del frontend; HTTPS en producción y HTTP solo para localhost en desarrollo. No se utilizan Host ni cabeceras del cliente para construir enlaces. El remitente de pruebas de Resend puede limitar los destinatarios; debe sustituirse antes de ofrecer el servicio a clientes.
+3. Regenerar Prisma, compilar y publicar backend y frontend de esta versión. El comando de inicio de Render existente aplica las migraciones antes de iniciar la API. Tras activar esta versión, los tokens anteriores sin identificador de sesión se rechazan: todos los usuarios deberán ingresar una vez de nuevo. Las contraseñas actuales se conservan.
+4. Verificar desde una cuenta real el envío, la carpeta de spam y el dominio de los enlaces. La prueba automática usa una bandeja simulada y no acredita la entrega del proveedor en producción.
+
+Si falta el proveedor o la URL de confianza, el cambio de contraseña y el control de sesiones siguen disponibles, y los formularios indican que el correo está deshabilitado. La pantalla nunca muestra claves de configuración. No se ha migrado Supabase ni publicado esta funcionalidad como parte de su implementación local.
+
+### Comportamiento
+
+- Las contraseñas nuevas requieren 15 caracteres Unicode, sin reglas artificiales de composición. Se admite pegar y usar gestores. El máximo de 72 bytes UTF-8 evita truncamientos de bcrypt; las contraseñas existentes siguen siendo válidas para ingresar. Se conservan las 12 rondas de bcrypt.
+- Los enlaces usan 32 bytes aleatorios; solo se guarda su SHA-256 en la base. Recuperación vence en 30 minutos y verificación en 24 horas. Cada enlace es de un solo uso y solo se conserva el más reciente de cada propósito. Se exige esperar un minuto entre envíos, con un máximo de tres por hora por cuenta y propósito; también hay límites HTTP por IP.
+- Solicitar recuperación responde igual para correos conocidos y desconocidos. La entrega se separa de la respuesta pública. El proveedor de correo registra errores genéricos, sin contraseñas, enlaces ni tokens. El envío automático de verificación y los avisos de contraseña no usan una cola persistente: si el proceso se interrumpe puede ser necesario solicitar un enlace nuevo.
+- Los enlaces llevan el token en el fragmento de Angular, se retiran de la dirección al abrir la pantalla y permanecen solo en memoria hasta enviar el formulario. No se guardan contraseñas ni enlaces en almacenamiento del navegador. Recargar esa pantalla exige abrir de nuevo el correo. Verificar requiere pulsar **Confirmar mi correo**; abrir el enlace no modifica la cuenta.
+- Cambiar o recuperar la contraseña invalida todas las sesiones y enlaces pendientes en la misma transacción, y exige iniciar sesión de nuevo. Recuperar el acceso también confirma la posesión del correo. La edición administrativa de correo o contraseña invalida sesiones y enlaces; cambiar el correo elimina su verificación.
+- Las sesiones incluyen navegador/sistema orientativos, inicio, actividad y vencimiento; no se almacena la IP ni la cadena completa del agente. La actividad se actualiza como máximo cada cinco minutos. Se permiten hasta 20 sesiones activas; iniciar otra cierra la más antigua. Vencen según JWT_EXPIRES_IN_SECONDS (por defecto siete días, rango permitido de un minuto a 30 días).
+- Cerrar un dispositivo revoca realmente su sesión en el servidor. Cerrar las otras sesiones exige la contraseña actual. El cierre explícito intenta revocar la sesión y elimina el borrador local; si no hay conexión, el token remoto puede seguir activo hasta su vencimiento o hasta revocarlo desde otro dispositivo. El cierre por vencimiento o cambio de contraseña conserva los borradores pendientes de registro rápido de su propietario.
+- La verificación es informativa en esta entrega; no bloquea los movimientos ni sustituye un segundo factor. MFA y recuperación mediante códigos de respaldo quedan para otra entrega.
+
+### API y pruebas
+
+Rutas nuevas bajo `/api/auth`: POST password/forgot, password/reset y email/verify son públicas; GET security, POST email/resend, password/change, logout, sessions/revoke-others y DELETE sessions/:id requieren una sesión activa. Las respuestas de autenticación se marcan para no almacenar en caché.
+
+CI activa la suite con `RUN_ACCOUNT_SECURITY_DB_TESTS=true` únicamente contra PostgreSQL local. Comprueba propiedad, revocación real, concurrencia de enlaces, vencimiento, reutilización, Unicode, limitación de envíos, cambios administrativos y las contraseñas heredadas. Las pruebas HTTP de límites son independientes de las pruebas funcionales. El navegador se verifica con frontend de producción, API/base locales y correo simulado: formularios, navegación, enlaces sin persistencia, cierre de sesiones, recuperación, diseño adaptable, modo oscuro y accesibilidad. No se envían correos a personas ni se modifican datos de producción en estas pruebas.
