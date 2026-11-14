@@ -3,8 +3,11 @@
 // Import styles with default layout.
 @use "@coreui/coreui/scss/coreui" as * with (
   $enable-deprecation-messages: false,
-  $font-family-sans-serif: ("Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"),
-  $primary: #2563eb,
+  $font-family-sans-serif: ("Manrope", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"),
+  $primary: #3657d6,
+  $success: #12846d,
+  $danger: #bd3c57,
+  $info: #4464c6,
   $border-radius: .5rem,
   $border-radius-sm: .375rem,
   $border-radius-lg: .75rem,
@@ -25,8 +28,9 @@
 // If you want to add custom CSS you can put it here.
 @use "custom";
 @use "pwa";
+@use "enterprise";
+@use "auth";
 
 // Examples
 // We use those styles to show code examples, you should remove them in your application.
 @use "examples";
-

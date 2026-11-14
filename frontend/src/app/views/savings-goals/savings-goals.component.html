@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Tus metas de ahorro</h1><p>Dale un propósito a tu ahorro y sigue el camino hacia tus objetivos.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -26,7 +27,8 @@
                 <button cButton color="danger" size="sm" variant="outline" (click)="remove(goal)">Eliminar</button>
               </div>
             </div>
-            <c-progress [value]="goal.percentage > 100 ? 100 : goal.percentage" [color]="progressColor(goal.percentage)" aria-label="Progreso de la meta" />
+            <div class="progress" style="height: 7px" role="progressbar" [attr.aria-label]="'Meta de ahorro: ' + goal.name" [attr.aria-valuenow]="goal.percentage > 100 ? 100 : goal.percentage" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuetext]="goal.percentage + '%'">
+<div [class]="'progress-bar bg-' + progressColor(goal.percentage)" [style.width.%]="goal.percentage > 100 ? 100 : goal.percentage"></div></div>
             <div class="d-flex justify-content-between mt-1">
               <div class="small text-body-secondary">
                 @if (goal.remaining > 0) {
@@ -88,7 +90,7 @@
 <c-modal [(visible)]="goalModalVisible">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar meta' : 'Nueva meta de ahorro' }}</h5>
-    <button (click)="goalModalVisible.set(false)" cButtonClose></button>
+    <button (click)="goalModalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="goalForm" (ngSubmit)="saveGoal()">
     <c-modal-body>
@@ -117,7 +119,7 @@
 <c-modal [(visible)]="contributionModalVisible">
   <c-modal-header>
     <h5 cModalTitle>Nuevo aporte</h5>
-    <button (click)="contributionModalVisible.set(false)" cButtonClose></button>
+    <button (click)="contributionModalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="contributionForm" (ngSubmit)="saveContribution()">
     <c-modal-body>

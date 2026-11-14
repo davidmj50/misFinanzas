@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Administración de usuarios</h1><p>Gestiona las cuentas de acceso y sus roles dentro de la aplicación.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -60,7 +61,7 @@
 <c-modal [(visible)]="modalVisible">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
-    <button (click)="modalVisible.set(false)" cButtonClose></button>
+    <button (click)="modalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>

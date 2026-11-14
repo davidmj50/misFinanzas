@@ -1,6 +1,6 @@
-<main class="container pwa-shell" style="max-width: 600px">
+<main class="container pwa-shell quick-entry-shell">
   <header class="d-flex justify-content-between gap-3 align-items-center mb-3"><a routerLink="/dashboard" class="text-decoration-none d-flex gap-2 align-items-center"><img src="assets/pwa/icon-192.png" width="40" height="40" class="rounded-3" alt="" /><strong>MisFinanzas</strong></a><a routerLink="/install" class="small">Instalar en el celular</a></header>
-  <h1 class="h4 mb-3">Registro rápido</h1>
+  <div class="page-heading"><div><h1>Registro rápido</h1><p>Un movimiento, unos segundos. Registra y sigue con tu día.</p></div></div>
   @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
   @if (catalogError()) { <p class="alert alert-warning" role="alert">{{ catalogError() }}</p> }
   @if (notice()) { <p class="alert alert-success" role="status">{{ notice() }}</p> }

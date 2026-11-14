@@ -1,3 +1,4 @@
+import { ChartDescriptionDirective } from '../../core/directives/chart-description.directive';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap, tap } from 'rxjs';
@@ -10,10 +11,8 @@ import {
   CardBodyComponent,
   CardComponent,
   CardHeaderComponent,
-  ColComponent,
+
   FormSelectDirective,
-  ProgressComponent,
-  RowComponent,
   TableDirective,
 } from '@coreui/angular';
 import { ChartjsComponent } from '@coreui/angular-chartjs';
@@ -29,18 +28,16 @@ import { localDateString } from '../../core/utils/dates';
 @Component({
   selector: 'app-dashboard',
   templateUrl: 'dashboard.component.html',
-  imports: [
+  imports: [ChartDescriptionDirective,
     BadgeComponent,
     CardBodyComponent,
     CardComponent,
     CardHeaderComponent,
     ChartjsComponent,
-    ColComponent,
+
     FormSelectDirective,
-    DecimalPipe,
-    ProgressComponent,
-    RouterLink,
-    RowComponent,
+    DecimalPipe,    RouterLink,
+
     TableDirective,
   ],
 })
@@ -119,26 +116,27 @@ export class DashboardComponent implements OnInit {
 
   private buildChart(summary: TransactionSummary) {
     const success = getStyle('--cui-success') ?? '#2eb85c';
-    const danger = getStyle('--cui-danger') ?? '#e55353';
+    const expense = getStyle('--cui-primary') ?? '#3657d6';
     const borderColor = getStyle('--cui-border-color-translucent');
     const bodyColor = getStyle('--cui-body-color');
 
     this.chartData = {
       labels: summary.byMonth.map((m) => m.month),
       datasets: [
-        { label: 'Ingresos', data: summary.byMonth.map((m) => m.income), backgroundColor: success },
-        { label: 'Gastos', data: summary.byMonth.map((m) => m.expense), backgroundColor: danger },
+        { label: 'Ingresos', data: summary.byMonth.map((m) => m.income), backgroundColor: success, borderRadius: 5, maxBarThickness: 22 },
+        { label: 'Gastos', data: summary.byMonth.map((m) => m.expense), backgroundColor: expense, borderRadius: 5, maxBarThickness: 22 },
       ],
     };
 
     this.chartOptions = {
       maintainAspectRatio: false,
+      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 350 },
       scales: {
         x: { grid: { color: borderColor, drawOnChartArea: false }, ticks: { color: bodyColor } },
         y: { grid: { color: borderColor }, ticks: { color: bodyColor }, beginAtZero: true },
       },
       plugins: {
-        legend: { labels: { color: bodyColor } },
+        legend: { position: 'bottom', align: 'start', labels: { color: bodyColor, usePointStyle: true, pointStyle: 'rectRounded', padding: 24, font: { family: 'Manrope', size: 12 } } },
       },
     };
   }

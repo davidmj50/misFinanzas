@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Planifica con más claridad</h1><p>Organiza los pagos de tus tarjetas y anticipa el saldo de tus cuentas.</p></div></header>
 <c-card class="mb-4">
   <c-card-header><strong>Tarjetas y proyección de saldo</strong></c-card-header>
   <c-card-body>
@@ -107,7 +108,7 @@
     </div>
     @if (forecast.account.type !== 'CREDIT_CARD' && forecast.firstNegativeDate) { <c-alert color="danger">El saldo proyectado puede ser negativo desde {{ forecast.firstNegativeDate }}.</c-alert> }
     @if (forecast.account.type === 'CREDIT_CARD') { <p class="small">En una tarjeta, el saldo negativo representa deuda. Los pagos aumentan su saldo y las compras lo reducen.</p>@if (forecast.firstOverLimitDate) { <c-alert color="danger">La deuda proyectada supera el cupo configurado desde {{ forecast.firstOverLimitDate }}.</c-alert> } }
-    <div style="height: 300px"><c-chart type="line" [data]="chartData" [options]="chartOptions" [height]="300">Saldo diario proyectado</c-chart></div>
+    <div style="height: 300px"><c-chart appChartDescription="Proyección diaria del saldo. Consulta las fechas e importes en la tabla de eventos." type="line" [data]="chartData" [options]="chartOptions" [height]="300">Saldo diario proyectado</c-chart></div>
     <table cTable [responsive]="true" align="middle" class="mt-3"><thead><tr><th>Fecha</th><th>Concepto</th><th>Origen</th><th class="text-end">Efecto en saldo ({{ forecast.account.currency }})</th><th>Acción</th></tr></thead><tbody>
       @for (event of forecast.events; track event.id) { <tr><td>{{ event.date }}</td><td>{{ event.name }}</td><td>{{ event.kind === 'TRANSACTION' ? 'Movimiento registrado' : event.kind === 'RECURRING' ? 'Recurrente previsto' : 'Extracto previsto' }}</td><td class="text-end" [class.text-danger]="event.amount < 0">{{ event.amount | number:'1.0-2' }}</td><td>
         @if (event.kind === 'RECURRING') { <button cButton color="secondary" size="sm" [disabled]="busy() || loading() || hasPendingRecurring()" (click)="openRecurring(event)">Registrar recurrente</button> }

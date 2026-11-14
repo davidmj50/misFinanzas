@@ -8,7 +8,7 @@ import {
   withHashLocation,
   withInMemoryScrolling,
   withRouterConfig,
-  withViewTransitions,
+
 } from '@angular/router';
 import { IconSetService } from '@coreui/icons-angular';
 import { routes } from './app.routes';
@@ -27,7 +27,7 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
       withEnabledBlockingInitialNavigation(),
-      withViewTransitions(),
+
       withHashLocation(),
     ),
     provideHttpClient(withInterceptors([authInterceptor])),

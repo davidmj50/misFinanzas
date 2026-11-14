@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Presupuestos</h1><p>Define límites para tus gastos y sigue el avance de cada categoría.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -30,7 +31,8 @@
                 <button cButton color="danger" size="sm" variant="outline" (click)="remove(budget)">Eliminar</button>
               </div>
             </div>
-            <c-progress [value]="budget.percentage > 100 ? 100 : budget.percentage" [color]="progressColor(budget.percentage)" aria-label="Progreso del presupuesto" />
+            <div class="progress" style="height: 7px" role="progressbar" [attr.aria-label]="'Presupuesto: ' + budget.category.name" [attr.aria-valuenow]="budget.percentage > 100 ? 100 : budget.percentage" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuetext]="budget.percentage + '%'">
+<div [class]="'progress-bar bg-' + progressColor(budget.percentage)" [style.width.%]="budget.percentage > 100 ? 100 : budget.percentage"></div></div>
             @if (budget.remaining < 0) {
               <div class="small text-danger mt-1">Te pasaste por {{ (-budget.remaining) | number: '1.0-2' }}</div>
             } @else {
@@ -50,7 +52,7 @@
 <c-modal [(visible)]="modalVisible">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar presupuesto' : 'Nuevo presupuesto' }}</h5>
-    <button (click)="modalVisible.set(false)" cButtonClose></button>
+    <button (click)="modalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>

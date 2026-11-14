@@ -1,43 +1,21 @@
-<!--sidebar-->
-<c-sidebar
-  #sidebar1="cSidebar"
-  class="d-print-none sidebar sidebar-fixed border-end"
-  id="sidebar1"
-  visible
->
-  <c-sidebar-header class="border-bottom">
-    <c-sidebar-brand [routerLink]="[]">
-      <span class="sidebar-brand-full">MisFinanzas</span>
-      <svg cIcon class="sidebar-brand-narrow" height="24" name="cilWallet" title="MisFinanzas"></svg>
+<button type="button" class="skip-navigation" (click)="focusContent()">Saltar al contenido</button>
+<c-sidebar #sidebar1="cSidebar" class="d-print-none sidebar sidebar-fixed" id="sidebar1" visible>
+  <c-sidebar-header>
+    <c-sidebar-brand routerLink="/dashboard" aria-label="MisFinanzas, ir al resumen">
+      <span class="brand-lockup"><img src="assets/pwa/icon-192.png" width="39" height="39" alt="" /><span class="brand-copy"><strong>MisFinanzas</strong><small>Tu espacio financiero</small></span></span>
     </c-sidebar-brand>
   </c-sidebar-header>
-
   <ng-scrollbar pointerEventsMethod="scrollbar" visibility="hover">
     <c-sidebar-nav [navItems]="navItems" dropdownMode="close" compact />
   </ng-scrollbar>
-
   @if (!sidebar1.narrow) {
-    <c-sidebar-footer cSidebarToggle="sidebar1" class="border-top d-none d-lg-flex" toggle="unfoldable" style="cursor: pointer;">
-      <button cSidebarToggler aria-label="Toggle sidebar fold"></button>
+    <c-sidebar-footer cSidebarToggle="sidebar1" class="border-top d-none d-lg-flex" toggle="unfoldable">
+      <span class="sidebar-footer-label">Un menú a tu medida</span><button cSidebarToggler aria-label="Contraer o expandir menú"></button>
     </c-sidebar-footer>
   }
 </c-sidebar>
-
-<!--main-->
 <div class="wrapper d-flex flex-column min-vh-100">
-  <!--app-header-->
-  <app-default-header
-    [cShadowOnScroll]="'sm'"
-    class="mb-4 d-print-none header header-sticky p-0 shadow-sm"
-    position="sticky"
-    sidebarId="sidebar1"
-  />
-  <!--app-body-->
-  <div class="body flex-grow-1">
-    <c-container breakpoint="lg" class="h-auto px-4">
-      <router-outlet />
-    </c-container>
-  </div>
-  <!--app footer-->
+  <app-default-header class="d-print-none header header-sticky p-0 app-header" position="sticky" sidebarId="sidebar1" />
+  <main class="body flex-grow-1 app-content" id="main-content" tabindex="-1"><router-outlet /></main>
   <app-default-footer />
 </div>

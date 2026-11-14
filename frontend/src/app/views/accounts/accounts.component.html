@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Tus cuentas, en orden</h1><p>Consulta tus saldos y administra tus cuentas bancarias, efectivo y tarjetas.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -54,7 +55,7 @@
 <c-modal [(visible)]="modalVisible">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar cuenta' : 'Nueva cuenta' }}</h5>
-    <button (click)="modalVisible.set(false)" cButtonClose></button>
+    <button (click)="modalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>
@@ -95,13 +96,13 @@
 <c-modal [(visible)]="historyModalVisible" size="lg">
   <c-modal-header>
     <h5 cModalTitle>Evolución de saldo — {{ historyAccount()?.name }}</h5>
-    <button (click)="historyModalVisible.set(false)" cButtonClose></button>
+    <button (click)="historyModalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <c-modal-body>
     @if (historyLoading()) {
       <p class="text-body-secondary text-center py-4">Cargando...</p>
     } @else if (chartData.labels && chartData.labels.length > 0) {
-      <c-chart [data]="chartData" [height]="300" [options]="chartOptions" type="line">
+      <c-chart appChartDescription="Evolución del saldo de la cuenta a lo largo del tiempo." [data]="chartData" [height]="300" [options]="chartOptions" type="line">
         Evolución de saldo
       </c-chart>
     } @else {

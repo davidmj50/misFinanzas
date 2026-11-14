@@ -1,42 +1,20 @@
 import { Component, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import {
-  AlertComponent,
-  ButtonDirective,
-  CardBodyComponent,
-  CardComponent,
-  ColComponent,
-  ContainerComponent,
-  FormControlDirective,
-  FormDirective,
-  FormLabelDirective,
-  RowComponent,
-} from '@coreui/angular';
+import { AlertComponent } from '@coreui/angular';
+import { AuthBrandComponent } from '../auth-brand.component';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
   host: {
-    class: 'bg-body-tertiary min-vh-100 d-flex flex-row align-items-center',
+    class: 'auth-page',
   },
-  imports: [
-    AlertComponent,
-    ButtonDirective,
-    CardBodyComponent,
-    CardComponent,
-    ColComponent,
-    ContainerComponent,
-    FormControlDirective,
-    FormDirective,
-    FormLabelDirective,
-    ReactiveFormsModule,
-    RouterLink,
-    RowComponent,
-  ],
+  imports: [AlertComponent, AuthBrandComponent, ReactiveFormsModule, RouterLink],
 })
 export class RegisterComponent {
+  readonly showPassword = signal(false);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 

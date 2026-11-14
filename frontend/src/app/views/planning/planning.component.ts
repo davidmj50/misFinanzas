@@ -1,3 +1,4 @@
+import { ChartDescriptionDirective } from '../../core/directives/chart-description.directive';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,7 +16,7 @@ const positiveMoney = [Validators.required, Validators.min(0.01), Validators.max
 const localToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 @Component({
   selector: 'app-planning', templateUrl: './planning.component.html',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe, ChartjsComponent, AlertComponent, BadgeComponent, ButtonDirective, CardBodyComponent, CardComponent, CardHeaderComponent, FormControlDirective, FormLabelDirective, FormSelectDirective, TableDirective],
+  imports: [ChartDescriptionDirective,ReactiveFormsModule, RouterLink, DecimalPipe, ChartjsComponent, AlertComponent, BadgeComponent, ButtonDirective, CardBodyComponent, CardComponent, CardHeaderComponent, FormControlDirective, FormLabelDirective, FormSelectDirective, TableDirective],
 })
 export class PlanningComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

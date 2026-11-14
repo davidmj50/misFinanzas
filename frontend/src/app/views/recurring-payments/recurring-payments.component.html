@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Pagos recurrentes</h1><p>Organiza tus compromisos habituales y mantén a la vista los próximos vencimientos.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -69,7 +70,7 @@
 <c-modal [(visible)]="modalVisible">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar pago recurrente' : 'Nuevo pago recurrente' }}</h5>
-    <button (click)="modalVisible.set(false)" cButtonClose></button>
+    <button (click)="modalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>

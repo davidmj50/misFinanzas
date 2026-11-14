@@ -1,41 +1,17 @@
-<c-container>
-  <c-row class="justify-content-center">
-    <c-col lg="6" md="8" xl="5">
-      <div class="d-flex flex-column gap-4">
-        <div class="text-center">
-          <h1 class="h3">MisFinanzas</h1>
-        </div>
-        <c-card class="p-4">
-          <c-card-body class="d-flex flex-column gap-4">
-            <h2 class="h5 text-center mb-0">Crea tu cuenta</h2>
-            @if (errorMessage()) {
-              <c-alert color="danger">{{ errorMessage() }}</c-alert>
-            }
-            <form cForm cRow class="gy-3" [formGroup]="form" (ngSubmit)="submit()">
-              <c-col xs="12">
-                <label cLabel for="name">Nombre</label>
-                <input autocomplete="name" cFormControl formControlName="name" id="name" placeholder="Tu nombre" type="text" />
-              </c-col>
-              <c-col xs="12">
-                <label cLabel for="email">Correo electrónico</label>
-                <input autocomplete="email" cFormControl formControlName="email" id="email" placeholder="tu@correo.com" type="email" />
-              </c-col>
-              <c-col xs="12">
-                <label cLabel for="password">Contraseña</label>
-                <input autocomplete="new-password" cFormControl formControlName="password" id="password" placeholder="Mínimo 8 caracteres" type="password" />
-              </c-col>
-              <c-col xs="12">
-                <button cButton class="w-100" color="primary" type="submit" [disabled]="loading()">
-                  {{ loading() ? 'Creando cuenta...' : 'Crear cuenta' }}
-                </button>
-              </c-col>
-            </form>
-          </c-card-body>
-        </c-card>
-        <div class="text-center text-body-secondary">
-          ¿Ya tienes cuenta? <a routerLink="/authentication/login">Ingresa</a>
-        </div>
-      </div>
-    </c-col>
-  </c-row>
-</c-container>
+<div class="auth-layout">
+  <aside class="auth-brand" aria-label="Acerca de MisFinanzas"><app-auth-brand /></aside>
+  <main class="auth-form-panel"><div class="auth-form-content">
+    <div class="auth-mobile-brand brand-lockup"><img src="assets/pwa/icon-192.png" width="42" height="42" alt="" /><div class="brand-copy"><strong>MisFinanzas</strong><small>Tu espacio financiero</small></div></div>
+    <header class="auth-form-heading"><span class="eyebrow">Un nuevo comienzo</span><h1>Crea tu cuenta</h1><p>Empieza a organizar tus finanzas con una visión clara de lo que tienes y lo que quieres lograr.</p></header>
+    @if (errorMessage()) { <c-alert color="danger" role="alert">{{ errorMessage() }}</c-alert> }
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div><label class="form-label" for="name">Tu nombre</label><input class="form-control" formControlName="name" id="name" type="text" autocomplete="name" placeholder="¿Cómo te llamas?" [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid" [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'name-error' : null" />@if (form.controls.name.touched && form.controls.name.invalid) { <p class="field-error" id="name-error">Escribe tu nombre con al menos dos caracteres.</p> }</div>
+      <div><label class="form-label" for="email">Correo electrónico</label><input class="form-control" formControlName="email" id="email" type="email" autocomplete="email" inputmode="email" placeholder="nombre@correo.com" [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid" [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null" />@if (form.controls.email.touched && form.controls.email.invalid) { <p class="field-error" id="email-error">Escribe un correo electrónico válido.</p> }</div>
+      <div><label class="form-label" for="password">Contraseña</label><div class="password-field"><input class="form-control" formControlName="password" id="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="new-password" placeholder="Crea una contraseña" aria-describedby="password-help" [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid" /><button type="button" class="password-toggle" [attr.aria-pressed]="showPassword()" aria-controls="password" (click)="showPassword.set(!showPassword())">{{ showPassword() ? 'Ocultar' : 'Mostrar' }}</button></div><p id="password-help" [class.field-error]="form.controls.password.touched && form.controls.password.invalid" class="field-help">Usa al menos 8 caracteres.</p></div>
+      <button class="btn btn-primary auth-submit" type="submit" [disabled]="loading()" [attr.aria-busy]="loading()"><span>{{ loading() ? 'Creando cuenta...' : 'Crear cuenta' }}</span><span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/authentication/login">Ingresar</a></p>
+    <div class="auth-install"><span>También en tu celular.</span><a routerLink="/install">Conoce la aplicación ↗</a></div>
+    <p class="auth-form-footer">MisFinanzas · Un solo lugar para organizarte mejor.</p>
+  </div></main>
+</div>

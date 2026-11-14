@@ -16,9 +16,7 @@ import {
   ModalComponent,
   ModalFooterComponent,
   ModalHeaderComponent,
-  ModalTitleDirective,
-  ProgressComponent,
-  RowComponent,
+  ModalTitleDirective,  RowComponent,
   TableDirective,
 } from '@coreui/angular';
 import { SavingsGoalsService } from '../../core/services/savings-goals.service';
@@ -45,9 +43,7 @@ import { localDateString } from '../../core/utils/dates';
     ModalComponent,
     ModalFooterComponent,
     ModalHeaderComponent,
-    ModalTitleDirective,
-    ProgressComponent,
-    ReactiveFormsModule,
+    ModalTitleDirective,    ReactiveFormsModule,
     RowComponent,
     TableDirective,
   ],

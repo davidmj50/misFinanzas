@@ -1,3 +1,4 @@
+import { ChartDescriptionDirective } from '../../core/directives/chart-description.directive';
 import { RouterLink } from '@angular/router';
 import { Component, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
@@ -38,7 +39,7 @@ const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
 @Component({
   selector: 'app-accounts',
   templateUrl: './accounts.component.html',
-  imports: [
+  imports: [ChartDescriptionDirective,
     AlertComponent,
     BadgeComponent,
     ButtonCloseDirective,
@@ -47,6 +48,7 @@ const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
     CardComponent,
     CardHeaderComponent,
     ChartjsComponent,
+
     ColComponent,
     DecimalPipe,
     FormControlDirective,

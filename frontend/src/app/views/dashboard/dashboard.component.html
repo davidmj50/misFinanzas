@@ -1,172 +1,79 @@
-<div class="d-flex align-items-center gap-2 mb-3">
-  <label for="summaryCurrency">Moneda del resumen</label>
-  <select cSelect id="summaryCurrency" class="w-auto" [value]="currency()" (change)="currency.set($any($event.target).value)">
-    @for (code of currencies(); track code) { <option [value]="code">{{ code }}</option> }
-  </select>
+<header class="page-heading">
+  <div><span class="eyebrow">Resumen general</span><h1>Una mirada a tus finanzas</h1><p>Lo que entra, lo que sale y los objetivos que estás construyendo.</p></div>
+  <div class="page-heading-control"><label for="summaryCurrency">Moneda del resumen</label><select cSelect id="summaryCurrency" [value]="currency()" (change)="currency.set($any($event.target).value)">@for (code of currencies(); track code) { <option [value]="code">{{ code }}</option> }</select></div>
+</header>
+@if (errorMessage()) { <p role="alert" class="alert alert-danger">{{ errorMessage() }}</p> }
+
+<section class="dashboard-metrics" aria-label="Resumen de los últimos doce meses" [attr.aria-busy]="loading()">
+  <article class="metric-card">
+    <div class="metric-top"><span>Ingresos</span><span class="metric-icon" aria-hidden="true">↗</span></div>
+    <div class="metric-value">@if (loading()) { <span>—</span> } @else { <span>{{ summary()?.totalIncome ?? 0 | number:'1.0-2' }}</span> }<small>{{ currency() }}</small></div>
+    <span class="metric-caption">Acumulado de los últimos 12 meses</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Gastos</span><span class="metric-icon expense" aria-hidden="true">↙</span></div>
+    <div class="metric-value">@if (loading()) { <span>—</span> } @else { <span>{{ summary()?.totalExpense ?? 0 | number:'1.0-2' }}</span> }<small>{{ currency() }}</small></div>
+    <span class="metric-caption">Acumulado de los últimos 12 meses</span>
+  </article>
+  <article class="metric-card featured">
+    <div class="metric-top"><span>Balance del período</span><span class="metric-icon" aria-hidden="true">＝</span></div>
+    <div class="metric-value">@if (loading()) { <span>—</span> } @else { <span>{{ balance | number:'1.0-2' }}</span> }<small>{{ currency() }}</small></div>
+    <span class="metric-caption">Ingresos menos gastos · últimos 12 meses</span>
+  </article>
+</section>
+
+<nav class="dashboard-actions" aria-label="Accesos frecuentes">
+  <a routerLink="/quick-entry" class="dashboard-action"><span class="action-symbol" aria-hidden="true">＋</span><span><strong>Registrar movimiento</strong><small>Un ingreso o un gasto, en segundos</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
+  <a routerLink="/imports" class="dashboard-action"><span class="action-symbol" aria-hidden="true">↓</span><span><strong>Importar extracto</strong><small>Revisa y organiza tus movimientos</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
+  <a routerLink="/planning" class="dashboard-action"><span class="action-symbol" aria-hidden="true">▥</span><span><strong>Planificar mis pagos</strong><small>Anticipa el saldo de tus cuentas</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
+</nav>
+
+<div class="dashboard-panels">
+  <c-card>
+    <c-card-header><div class="section-heading"><h2>Ingresos y gastos</h2><span class="small text-body-secondary">Por mes · {{ currency() }}</span></div></c-card-header>
+    <c-card-body><c-chart appChartDescription="Ingresos y gastos por mes. Consulta los importes en la tabla de datos del gráfico." [data]="chartData" [height]="290" [options]="chartOptions" type="bar">Gráfico de ingresos vs. gastos</c-chart>
+      <details class="chart-data"><summary>Ver datos por mes</summary>
+        <div class="table-responsive"><table class="table mb-0"><caption class="visually-hidden">Ingresos y gastos por mes, en {{ currency() }}</caption><thead><tr><th scope="col">Mes</th><th scope="col" class="text-end">Ingresos</th><th scope="col" class="text-end">Gastos</th></tr></thead><tbody>@for (month of summary()?.byMonth ?? []; track month.month) { <tr><th scope="row">{{ month.month }}</th><td class="text-end">{{ month.income | number:'1.0-2' }}</td><td class="text-end">{{ month.expense | number:'1.0-2' }}</td></tr> } @empty { <tr><td colspan="3">No hay movimientos para mostrar.</td></tr> }</tbody></table></div>
+      </details>
+    </c-card-body>
+  </c-card>
+  <c-card>
+    <c-card-header><div class="section-heading"><h2>Tus cuentas</h2><a routerLink="/accounts">Ver todas →</a></div></c-card-header>
+    <c-card-body>
+      @for (account of accounts(); track account.id) {
+        <div class="account-summary"><span class="account-symbol" aria-hidden="true">{{ account.type === 'CREDIT_CARD' ? 'TC' : account.type === 'CASH' ? '$' : 'CB' }}</span><div><strong>{{ account.name }}</strong><small>{{ account.institution || (account.type === 'BANK' ? 'Cuenta bancaria' : account.type === 'CASH' ? 'Efectivo' : 'Tarjeta de crédito') }}</small></div><div class="account-amount" [class.text-danger]="(account.balance ?? 0) < 0">{{ account.balance ?? 0 | number:'1.0-2' }}<small>{{ account.currency }}</small></div></div>
+      } @empty { <div class="empty-state">@if (loading()) { Cargando tus cuentas… } @else { Todavía no tienes cuentas.<br /><a routerLink="/accounts">Crea tu primera cuenta</a> }</div> }
+    </c-card-body>
+  </c-card>
 </div>
-@if (errorMessage()) { <p role="alert" class="text-danger">{{ errorMessage() }}</p> }
-<c-row class="mb-4">
-  <c-col md="4">
-    <c-card class="text-center">
-      <c-card-body>
-        <div class="text-body-secondary">Ingresos (últimos 12 meses)</div>
-        <div class="fs-4 fw-semibold text-success">{{ summary()?.totalIncome ?? 0 | number: '1.0-2' }} {{ currency() }}</div>
-      </c-card-body>
-    </c-card>
-  </c-col>
-  <c-col md="4">
-    <c-card class="text-center">
-      <c-card-body>
-        <div class="text-body-secondary">Gastos (últimos 12 meses)</div>
-        <div class="fs-4 fw-semibold text-danger">{{ summary()?.totalExpense ?? 0 | number: '1.0-2' }} {{ currency() }}</div>
-      </c-card-body>
-    </c-card>
-  </c-col>
-  <c-col md="4">
-    <c-card class="text-center">
-      <c-card-body>
-        <div class="text-body-secondary">Balance</div>
-        <div class="fs-4 fw-semibold" [class.text-success]="balance >= 0" [class.text-danger]="balance < 0">
-          {{ balance | number: '1.0-2' }} {{ currency() }}
-        </div>
-      </c-card-body>
-    </c-card>
-  </c-col>
-</c-row>
 
-<c-row class="mb-4">
-  <c-col lg="4">
-    <c-card class="h-100">
-      <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Saldo por cuenta</strong>
-        <a routerLink="/accounts" class="small">Ver todas</a>
-      </c-card-header>
-      <c-card-body>
-        @for (account of accounts(); track account.id) {
-          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-            <div>
-              <div class="fw-semibold">{{ account.name }}</div>
-              <div class="text-body-secondary small">{{ account.institution || account.type }}</div>
-            </div>
-            <div class="fw-semibold" [class.text-success]="(account.balance ?? 0) >= 0" [class.text-danger]="(account.balance ?? 0) < 0">
-              {{ account.balance ?? 0 | number: '1.0-2' }} {{ account.currency }}
-            </div>
-          </div>
-        } @empty {
-          <p class="text-body-secondary text-center py-4 mb-0">
-            @if (loading()) { Cargando... } @else { Aún no tienes cuentas registradas. }
-          </p>
-        }
-      </c-card-body>
-    </c-card>
-  </c-col>
-  <c-col lg="4">
-    <c-card class="h-100">
-      <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Presupuestos del mes (COP)</strong>
-        <a routerLink="/budgets" class="small">Ver todos</a>
-      </c-card-header>
-      <c-card-body>
-        @for (budget of budgets(); track budget.id) {
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong class="small">{{ budget.category.name }}</strong>
-              <span class="text-body-secondary small">
-                {{ budget.spent | number: '1.0-2' }} / {{ budget.amount | number: '1.0-2' }} ({{ budget.percentage }}%)
-              </span>
-            </div>
-            <c-progress
-              [value]="budget.percentage > 100 ? 100 : budget.percentage"
-              [color]="progressColor(budget.percentage)"
-              [height]="6"
-              aria-label="Progreso del presupuesto"
-            />
-          </div>
-        } @empty {
-          <p class="text-body-secondary text-center py-4 mb-0">
-            @if (loading()) { Cargando... } @else { Aún no tienes presupuestos configurados. }
-          </p>
-        }
-      </c-card-body>
-    </c-card>
-  </c-col>
-  <c-col lg="4">
-    <c-card class="h-100">
-      <c-card-header class="d-flex justify-content-between align-items-center">
-        <strong>Metas de ahorro (COP)</strong>
-        <a routerLink="/savings-goals" class="small">Ver todas</a>
-      </c-card-header>
-      <c-card-body>
-        @for (goal of savingsGoals(); track goal.id) {
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong class="small">{{ goal.name }}</strong>
-              <span class="text-body-secondary small">
-                {{ goal.saved | number: '1.0-2' }} / {{ goal.targetAmount | number: '1.0-2' }} ({{ goal.percentage }}%)
-              </span>
-            </div>
-            <c-progress
-              [value]="goal.percentage > 100 ? 100 : goal.percentage"
-              [color]="savingsProgressColor(goal.percentage)"
-              [height]="6"
-              aria-label="Progreso de la meta de ahorro"
-            />
-          </div>
-        } @empty {
-          <p class="text-body-secondary text-center py-4 mb-0">
-            @if (loading()) { Cargando... } @else { Aún no tienes metas de ahorro. }
-          </p>
-        }
-      </c-card-body>
-    </c-card>
-  </c-col>
-</c-row>
+<div class="dashboard-two-columns">
+  <c-card>
+    <c-card-header><div class="section-heading"><h2>Presupuestos del mes</h2><a routerLink="/budgets">Ver todos →</a></div></c-card-header>
+    <c-card-body>
+      @for (budget of budgets(); track budget.id) {
+        <div class="progress-summary"><div class="progress-summary-top"><strong>{{ budget.category.name }}</strong><span>{{ budget.percentage }}% utilizado</span></div><div class="progress" style="height: 7px" role="progressbar" [attr.aria-label]="'Presupuesto: ' + budget.category.name" [attr.aria-valuenow]="budget.percentage > 100 ? 100 : budget.percentage" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuetext]="budget.percentage + '%'">
+<div [class]="'progress-bar bg-' + progressColor(budget.percentage)" [style.width.%]="budget.percentage > 100 ? 100 : budget.percentage"></div></div><span class="progress-summary-caption">{{ budget.spent | number:'1.0-2' }} de {{ budget.amount | number:'1.0-2' }} COP</span></div>
+      } @empty { <div class="empty-state">@if (loading()) { Cargando tus presupuestos… } @else { Dale un límite a tus gastos.<br /><a routerLink="/budgets">Configura un presupuesto</a> }</div> }
+    </c-card-body>
+  </c-card>
+  <c-card>
+    <c-card-header><div class="section-heading"><h2>Metas de ahorro</h2><a routerLink="/savings-goals">Ver todas →</a></div></c-card-header>
+    <c-card-body>
+      @for (goal of savingsGoals(); track goal.id) {
+        <div class="progress-summary"><div class="progress-summary-top"><strong>{{ goal.name }}</strong><span>{{ goal.percentage }}% de tu meta</span></div><div class="progress" style="height: 7px" role="progressbar" [attr.aria-label]="'Meta de ahorro: ' + goal.name" [attr.aria-valuenow]="goal.percentage > 100 ? 100 : goal.percentage" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuetext]="goal.percentage + '%'">
+<div [class]="'progress-bar bg-' + savingsProgressColor(goal.percentage)" [style.width.%]="goal.percentage > 100 ? 100 : goal.percentage"></div></div><span class="progress-summary-caption">{{ goal.saved | number:'1.0-2' }} de {{ goal.targetAmount | number:'1.0-2' }} COP</span></div>
+      } @empty { <div class="empty-state">@if (loading()) { Cargando tus metas… } @else { Cada objetivo empieza con un primer paso.<br /><a routerLink="/savings-goals">Crea una meta de ahorro</a> }</div> }
+    </c-card-body>
+  </c-card>
+</div>
 
-<c-row class="mb-4">
-  <c-col xs="12">
-    <c-card>
-      <c-card-header>
-        <strong>Ingresos vs. Gastos por mes ({{ currency() }})</strong>
-      </c-card-header>
-      <c-card-body>
-        <c-chart [data]="chartData" [height]="300" [options]="chartOptions" type="bar">
-          Gráfico de ingresos vs. gastos
-        </c-chart>
-      </c-card-body>
-    </c-card>
-  </c-col>
-</c-row>
-
-<c-row>
-  <c-col xs="12">
-    <c-card>
-      <c-card-header>
-        <strong>Principales categorías de gasto</strong>
-      </c-card-header>
-      <c-card-body>
-        <table [hover]="true" [responsive]="true" align="middle" cTable class="mb-0">
-          <thead>
-            <tr>
-              <th>Categoría</th>
-              <th class="text-end">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (category of topExpenseCategories; track category.categoryId) {
-              <tr>
-                <td><c-badge color="danger">{{ category.categoryName }}</c-badge></td>
-                <td class="text-end">{{ category.total | number: '1.0-2' }} {{ currency() }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="2" class="text-center text-body-secondary py-4">
-                  @if (loading()) { Cargando... } @else { Aún no hay gastos registrados. }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </c-card-body>
-    </c-card>
-  </c-col>
-</c-row>
+<c-card>
+  <c-card-header><div class="section-heading"><h2>¿En qué estás gastando?</h2><span class="small text-body-secondary">Principales categorías · {{ currency() }}</span></div></c-card-header>
+  <c-card-body>
+    <table [hover]="true" [responsive]="true" align="middle" cTable class="mb-0"><thead><tr><th>Categoría</th><th class="text-end">Total del período</th></tr></thead><tbody>
+      @for (category of topExpenseCategories; track category.categoryId) { <tr><td><c-badge color="info">{{ category.categoryName }}</c-badge></td><td class="text-end fw-semibold">{{ category.total | number:'1.0-2' }} {{ currency() }}</td></tr> }
+      @empty { <tr><td colspan="2" class="empty-state">@if (loading()) { Cargando tus gastos… } @else { Aquí verás tus categorías cuando registres tus primeros gastos. }</td></tr> }
+    </tbody></table>
+  </c-card-body>
+</c-card>

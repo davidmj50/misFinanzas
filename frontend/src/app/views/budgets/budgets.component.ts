@@ -18,7 +18,6 @@ import {
   ModalFooterComponent,
   ModalHeaderComponent,
   ModalTitleDirective,
-  ProgressComponent,
   RowComponent,
 } from '@coreui/angular';
 import { BudgetsService } from '../../core/services/budgets.service';
@@ -47,7 +46,6 @@ import { Category } from '../../core/models/finance.models';
     ModalFooterComponent,
     ModalHeaderComponent,
     ModalTitleDirective,
-    ProgressComponent,
     ReactiveFormsModule,
     RowComponent,
   ],

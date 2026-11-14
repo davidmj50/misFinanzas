@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Tus movimientos</h1><p>Consulta, filtra y registra lo que entra y sale de tus cuentas.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -6,8 +7,8 @@
       </c-card-header>
       <c-card-body>
         <form cForm [formGroup]="filterForm" (ngSubmit)="applyFilters()">
-          <c-row class="gy-3 align-items-end">
-            <c-col md="2">
+          <c-row class="gy-3 align-items-end transaction-filters">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fAccount">Cuenta</label>
               <select cSelect formControlName="accountId" id="fAccount">
                 <option value="">Todas</option>
@@ -16,7 +17,7 @@
                 }
               </select>
             </c-col>
-            <c-col md="2">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fCategory">Categoría</label>
               <select cSelect formControlName="categoryId" id="fCategory">
                 <option value="">Todas</option>
@@ -25,7 +26,7 @@
                 }
               </select>
             </c-col>
-            <c-col md="2">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fType">Tipo</label>
               <select cSelect formControlName="type" id="fType">
                 <option value="">Todos</option>
@@ -34,15 +35,15 @@
                 <option value="TRANSFER">Transferencia</option>
               </select>
             </c-col>
-            <c-col md="2">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fDateFrom">Desde</label>
               <input cFormControl formControlName="dateFrom" id="fDateFrom" type="date" />
             </c-col>
-            <c-col md="2">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fDateTo">Hasta</label>
               <input cFormControl formControlName="dateTo" id="fDateTo" type="date" />
             </c-col>
-            <c-col md="2">
+            <c-col sm="6" xl="4" xxl="2">
               <label cLabel for="fSearch">Buscar</label>
               <input cFormControl formControlName="search" id="fSearch" placeholder="Comercio, nota..." type="text" />
             </c-col>
@@ -81,7 +82,7 @@
         @if (errorMessage()) {
           <c-alert color="danger">{{ errorMessage() }}</c-alert>
         }
-        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0">
+        <table [hover]="true" [responsive]="true" [striped]="true" align="middle" cTable class="mb-0 transactions-table">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -150,7 +151,7 @@
 <c-modal [(visible)]="modalVisible" size="lg">
   <c-modal-header>
     <h5 cModalTitle>{{ editingId() ? 'Editar transacción' : 'Nueva transacción' }}</h5>
-    <button (click)="modalVisible.set(false)" cButtonClose></button>
+    <button (click)="modalVisible.set(false)" cButtonClose aria-label="Cerrar ventana"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>

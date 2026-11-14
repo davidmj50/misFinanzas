@@ -1,3 +1,4 @@
+<header class="page-heading"><div><h1>Transferencias</h1><p>Mueve dinero entre tus cuentas y conserva el detalle de cada traslado.</p></div></header>
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -50,7 +51,7 @@
 <c-modal [(visible)]="modalVisible" [backdrop]="'static'" [keyboard]="false">
   <c-modal-header>
     <h5 cModalTitle>Nueva transferencia</h5>
-    <button cButtonClose [disabled]="saving()" (click)="modalVisible.set(false)"></button>
+    <button cButtonClose aria-label="Cerrar ventana" [disabled]="saving()" (click)="modalVisible.set(false)"></button>
   </c-modal-header>
   <form cForm [formGroup]="form" (ngSubmit)="save()">
     <c-modal-body>
